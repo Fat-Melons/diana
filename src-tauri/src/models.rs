@@ -21,13 +21,6 @@ pub struct PlayerProfile {
     pub lp: Option<i32>,
 }
 
-#[derive(Serialize, Debug)]
-pub struct PlayerOverview {
-    pub profile: PlayerProfile,
-    pub matches: Vec<crate::match_summary::MatchSummary>,
-}
-
-
 #[derive(Deserialize, Debug)]
 pub struct AccountDto {
     pub puuid: String,
@@ -148,4 +141,46 @@ pub struct DbMatchRow {
     pub matchId: String,
     pub entryPlayerPuuid: String,
     pub gameCreation: i64,
+}
+
+#[derive(Serialize, Debug)]
+pub struct PlayerStats {
+    pub winrate: f32,
+    pub games: i32,
+    pub streak: i32,
+    pub kda: f32,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TopChamp {
+    pub champion_name: String,
+    pub icon_url: String,
+    pub games: i32,
+    pub wins: i32,
+    pub winrate: i32,
+    pub kda: f32,
+}
+
+#[derive(Serialize, Debug)]
+pub struct RankStep {
+    pub match_id: String,
+    pub label_index: i32,
+    pub lp_before: i32,
+    pub lp_after: i32,
+    pub lp_delta: i32,
+    pub result: String,
+    pub tier_before: String,
+    pub division_before: String,
+    pub tier_after: String,
+    pub division_after: String,
+    pub exact: bool,
+}
+
+#[derive(Serialize, Debug)]
+pub struct PlayerOverview {
+    pub profile: PlayerProfile,
+    pub matches: Vec<crate::match_summary::MatchSummary>,
+    pub stats: PlayerStats,
+    pub top_champs: Vec<TopChamp>,
+    pub ranked_progress: Vec<RankStep>,
 }

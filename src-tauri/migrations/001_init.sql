@@ -1,4 +1,3 @@
--- Drop old objects (careful in prod!)
 DROP INDEX IF EXISTS "idx_match_details_entryPlayerPuuid";
 DROP INDEX IF EXISTS "idx_match_timeline_mid";
 DROP INDEX IF EXISTS "idx_match_details_participants";
@@ -11,7 +10,6 @@ DROP TABLE IF EXISTS "match_details" CASCADE;
 DROP TABLE IF EXISTS "summoners" CASCADE;
 DROP TABLE IF EXISTS "regions" CASCADE;
 
--- SUMMONERS
 CREATE TABLE public.summoners (
     puuid                  varchar(200) PRIMARY KEY,
     "gameName"             varchar(100) NOT NULL,
@@ -29,7 +27,6 @@ CREATE TABLE public.summoners (
     "lastMissingDataNotification" timestamptz NOT NULL DEFAULT now()
 );
 
--- MATCH DETAILS
 CREATE TABLE public.match_details (
     mid                    bigserial PRIMARY KEY,
     "matchId"              varchar(50)  NOT NULL UNIQUE,
@@ -48,7 +45,6 @@ CREATE TABLE public.match_details (
     "lastUpdated"          timestamptz  NOT NULL DEFAULT now()
 );
 
--- MATCH TIMELINE
 CREATE TABLE public.match_timeline (
     tid                    bigserial PRIMARY KEY,
     mid                    bigint       NOT NULL REFERENCES public.match_details(mid) ON DELETE CASCADE,
@@ -60,7 +56,6 @@ CREATE TABLE public.match_timeline (
     "lastUpdated"          timestamptz  NOT NULL DEFAULT now()
 );
 
--- Indexes
 CREATE INDEX IF NOT EXISTS idx_match_details_entryPlayerPuuid ON public.match_details("entryPlayerPuuid");
 CREATE INDEX IF NOT EXISTS idx_match_details_gameCreation ON public.match_details("gameCreation" DESC);
 CREATE INDEX IF NOT EXISTS idx_match_timeline_mid ON public.match_timeline(mid);

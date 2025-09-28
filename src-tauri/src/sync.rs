@@ -5,7 +5,10 @@ use serde_json::json;
 use crate::{
     db,
     db::{PgPool, PgTx},
-    models::{AccountDto, MatchDto, PlayerOverview, PlayerProfile, SummonerDto},
+    models::{
+        AccountDto, MatchDto, PlayerOverview, PlayerProfile, PlayerStats, SummonerDto, TopChamp,
+        RankStep,
+    },
     riot,
 };
 
@@ -21,10 +24,12 @@ pub async fn sync_player_and_get_overview(
 
     let client = Client::builder().user_agent("Diana/0.1.0").build()?;
 
-    // ✅ Only need account + summoner once
-    let acct: AccountDto = riot::get_account_by_riot_id(&client, api_key, regional, name, tag).await?;
-    let sum: SummonerDto = riot::get_summoner_by_puuid(&client, api_key, platform, &acct.puuid).await?;
-    let (tier, division, lp) = riot::get_rank_solo(&client, api_key, platform, &acct.puuid).await?;
+    let acct: AccountDto =
+        riot::get_account_by_riot_id(&client, api_key, regional, name, tag).await?;
+    let sum: SummonerDto =
+        riot::get_summoner_by_puuid(&client, api_key, platform, &acct.puuid).await?;
+    let (tier, division, lp) =
+        riot::get_rank_solo(&client, api_key, platform, &acct.puuid).await?;
 
     db::upsert_summoner(
         pool,
@@ -35,9 +40,9 @@ pub async fn sync_player_and_get_overview(
         tier.as_deref(),
         division.as_deref(),
         lp,
-    ).await?;
+    )
+    .await?;
 
-    // --- Sync matches ---
     let latest_in_db = db::latest_match_for_puuid(pool, &acct.puuid).await?;
     let latest_from_riot = riot::get_match_ids(&client, api_key, regional, &acct.puuid, 0, 1)
         .await?
@@ -46,15 +51,18 @@ pub async fn sync_player_and_get_overview(
 
     if let Some(latest_riot) = latest_from_riot {
         if Some(&latest_riot) != latest_in_db.as_ref() {
-            // Riot has newer matches, backfill until we catch up
             let mut start = 0u32;
             let batch = 20u32;
             let max_to_fetch = 200u32;
             let mut fetched = 0u32;
 
             'outer: loop {
-                let ids = riot::get_match_ids(&client, api_key, regional, &acct.puuid, start, batch).await?;
-                if ids.is_empty() { break; }
+                let ids =
+                    riot::get_match_ids(&client, api_key, regional, &acct.puuid, start, batch)
+                        .await?;
+                if ids.is_empty() {
+                    break;
+                }
 
                 for mid in ids {
                     if Some(&mid) == latest_in_db.as_ref() {
@@ -62,7 +70,9 @@ pub async fn sync_player_and_get_overview(
                     }
                     insert_full_match(&client, pool, api_key, regional, &acct.puuid, &mid).await?;
                     fetched += 1;
-                    if fetched >= max_to_fetch { break 'outer; }
+                    if fetched >= max_to_fetch {
+                        break 'outer;
+                    }
                 }
 
                 start += batch;
@@ -70,7 +80,6 @@ pub async fn sync_player_and_get_overview(
         }
     }
 
-    // --- Overview: fetch last 10 matches from DB ---
     let ddragon_version = riot::get_latest_ddragon_version(&client).await?;
     let recent_matches = db::get_recent_matches(pool, &acct.puuid, 10).await?;
 
@@ -80,8 +89,10 @@ pub async fn sync_player_and_get_overview(
             pool,
             &row.matchId,
             &acct.puuid,
-            &ddragon_version
-        ).await {
+            &ddragon_version,
+        )
+        .await
+        {
             matches.push(ms);
         }
     }
@@ -97,12 +108,40 @@ pub async fn sync_player_and_get_overview(
         region: query_region.to_uppercase(),
         summoner_level: sum.summonerLevel as u32,
         profile_icon_url,
-        tier,
-        division,
+        tier: tier.clone(),
+        division: division.clone(),
         lp,
     };
 
-    Ok(PlayerOverview { profile, matches })
+    let (games, _wins, _losses, avg_kda, winrate, streak, top_champs_json) =
+        crate::db::compute_player_summary(pool, &acct.puuid).await?;
+    let top_champs: Vec<TopChamp> =
+        serde_json::from_value(top_champs_json).unwrap_or_else(|_| vec![]);
+
+    let stats = PlayerStats {
+        winrate,
+        games,
+        streak,
+        kda: avg_kda,
+    };
+
+    let ranked_progress: Vec<RankStep> = if let (Some(ref t), Some(ref d), Some(lp_val)) =
+        (profile.tier.as_ref(), profile.division.as_ref(), profile.lp)
+    {
+        crate::db::compute_rank_progress_and_cache(pool, &acct.puuid, t, d, lp_val)
+            .await
+            .unwrap_or_default()
+    } else {
+        vec![]
+    };
+
+    Ok(PlayerOverview {
+        profile,
+        matches,
+        stats,
+        top_champs,
+        ranked_progress,
+    })
 }
 
 async fn insert_full_match(
@@ -141,17 +180,26 @@ async fn insert_full_match(
         None,
         &participants_json,
         &teams_json,
-    ).await?;
+    )
+    .await?;
 
-    if let Some(frames) = timeline.get("info").and_then(|i| i.get("frames")).and_then(|f| f.as_array()) {
+    if let Some(frames) = timeline
+        .get("info")
+        .and_then(|i| i.get("frames"))
+        .and_then(|f| f.as_array())
+    {
         for (idx, frame) in frames.iter().enumerate() {
             if db::timeline_frame_exists_tx(&mut tx, mid, idx as i32).await? {
-                println!("[DB] Timeline frame {} for match {} exists, skipping.", idx, match_id);
+                println!(
+                    "[DB] Timeline frame {} for match {} exists, skipping.",
+                    idx, match_id
+                );
                 continue;
             }
 
             let ts = frame.get("timestamp").and_then(|t| t.as_i64());
-            let participant_frames = frame.get("participantFrames").cloned().unwrap_or_else(|| json!({}));
+            let participant_frames =
+                frame.get("participantFrames").cloned().unwrap_or_else(|| json!({}));
             let events = frame.get("events").cloned().unwrap_or_else(|| json!([]));
 
             db::insert_timeline_frame_tx(
@@ -162,7 +210,8 @@ async fn insert_full_match(
                 ts,
                 &participant_frames,
                 &events,
-            ).await?;
+            )
+            .await?;
         }
     }
 

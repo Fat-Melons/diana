@@ -55,7 +55,6 @@ pub async fn summarize_match_from_db(
     .fetch_one(pool)
     .await?;
 
-    // unwrap Option<Value>
     let participants_val: Value = row
         .participants
         .ok_or_else(|| anyhow!("No participants JSON in DB for match {}", match_id))?;
@@ -82,7 +81,7 @@ pub async fn summarize_match_from_db(
 
     let items = [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5];
 
-    let duration_s = row.gameDuration.unwrap_or(0) as i64; // cast i32 → i64
+    let duration_s = row.gameDuration.unwrap_or(0) as i64;
     let minutes = duration_s as f32 / 60.0;
 
     let gpm = if minutes > 0.0 { p.goldEarned as f32 / minutes } else { 0.0 };

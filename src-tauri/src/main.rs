@@ -1,5 +1,3 @@
-#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
-
 mod models;
 mod riot;
 mod db;
@@ -8,7 +6,6 @@ mod sync;
 
 use anyhow::Result;
 use models::{PlayerOverview, PlayerQuery};
-use uuid::Uuid;
 
 #[tauri::command]
 async fn get_player_overview(query: PlayerQuery) -> Result<PlayerOverview, String> {
@@ -18,9 +15,11 @@ async fn get_player_overview(query: PlayerQuery) -> Result<PlayerOverview, Strin
         dotenvy::dotenv().ok();
         let api_key = std::env::var("RIOT_API_KEY").map_err(|_| "RIOT_API_KEY not set".to_string())?;
         let pool = db::init_pool().await.map_err(|e| e.to_string())?;
-        sync::sync_player_and_get_overview(&pool, &query.region, &query.name, &query.tag, &api_key).await
+        sync::sync_player_and_get_overview(&pool, &query.region, &query.name, &query.tag, &api_key)
+            .await
             .map_err(|e| e.to_string())
-    }.await;
+    }
+    .await;
     eprintln!("get_player_overview END {call_id} ok={}", out.is_ok());
     out
 }

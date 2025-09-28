@@ -31,15 +31,15 @@ const ProfileCard: React.FC<ProfileProps> = ({
 }) => {
   const emblem = rankEmblemFromTier(tier);
   const rankLine = tier ? `${tier} ${division ?? ""}`.trim() : "Unranked";
-  const streakStr = stats?.streak
-    ? stats.streak > 0
-      ? `W${stats.streak}`
-      : `L${Math.abs(stats.streak)}`
-    : undefined;
+  const streakStr =
+    stats?.streak && stats.streak !== 0
+      ? stats.streak > 0
+        ? `W${stats.streak}`
+        : `L${Math.abs(stats.streak)}`
+      : undefined;
 
   return (
     <aside className="profile-card fancy-card">
-      {/* top row */}
       <div className="profile-header">
         <div className="avatar-wrap">
           <img
@@ -49,9 +49,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
           />
           {streakStr && (
             <div
-              className={`streak-badge ${
-                stats!.streak! > 0 ? "win" : "loss"
-              }`}
+              className={`streak-badge ${stats!.streak! > 0 ? "win" : "loss"}`}
             >
               {streakStr}
             </div>
@@ -60,9 +58,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
 
         <div className="profile-meta">
           <h2 className="profile-name">
-            <div>
-              {name}
-            </div>
+            <div>{name}</div>
             <div className="tag">
               {tagline ? <span>#{tagline}</span> : null}
             </div>
@@ -73,7 +69,6 @@ const ProfileCard: React.FC<ProfileProps> = ({
         </div>
       </div>
 
-      {/* emblem + rank info underneath */}
       <div className="profile-rank">
         {emblem && (
           <img className="rank-emblem" src={emblem} alt={`${tier} emblem`} />
@@ -81,8 +76,6 @@ const ProfileCard: React.FC<ProfileProps> = ({
         <div className="rank-line">{rankLine}</div>
         {tier && <div className="lp-line">{lp ?? 0} LP</div>}
       </div>
-
-      {/* quick stats */}
       <div className="profile-quick">
         <div className="quick-pill">
           <span className="label">Winrate</span>

@@ -5,7 +5,6 @@ import ProfileCard from "../components/ProfileCard";
 import MatchList from "../components/MatchList";
 import LPGraph from "../components/LPGraph";
 import TopChamps from "../components/TopChamps";
-import { deriveProfileStats } from "../utils/format";
 
 const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
 
@@ -17,7 +16,11 @@ const Home: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetchOverview(DEFAULT_USER.name, DEFAULT_USER.region, DEFAULT_USER.tag);
+        const res = await fetchOverview(
+          DEFAULT_USER.name,
+          DEFAULT_USER.region,
+          DEFAULT_USER.tag,
+        );
         setData(res);
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -27,12 +30,21 @@ const Home: React.FC = () => {
     })();
   }, []);
 
-  if (loading) return <div className="container"><div className="muted">Loading…</div></div>;
-  if (error) return <div className="container"><div className="error">Error: {error}</div></div>;
+  if (loading)
+    return (
+      <div className="container">
+        <div className="muted">Loading…</div>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="container">
+        <div className="error">Error: {error}</div>
+      </div>
+    );
   if (!data) return null;
 
-  const { profile, matches } = data;
-  const stats = deriveProfileStats(matches);
+  const { profile, matches, stats, top_champs, ranked_progress } = data;
 
   return (
     <div className="container grid">
@@ -50,13 +62,13 @@ const Home: React.FC = () => {
         />
 
         <LPGraph
-          matches={matches}
+          ranked_progress={ranked_progress}
           currentLP={profile.lp}
           tier={profile.tier}
           division={profile.division}
         />
 
-        <TopChamps matches={matches} />
+        <TopChamps champs={top_champs} />
       </div>
 
       <div className="right-col">

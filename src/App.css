@@ -49,9 +49,6 @@ body {
   padding: 16px;
 }
 
-/* ----------------------
-   Shared Card Styling
------------------------ */
 .fancy-card {
   background: #0c1323;
   border: 1px solid var(--border);
@@ -84,16 +81,10 @@ body {
   color: var(--muted);
 }
 
-/* ----------------------
-   Profile Card
------------------------ */
-/* ----------------------
-   Profile Card
------------------------ */
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 16px; /* a little more spacing */
+  gap: 16px;
 }
 
 .avatar-wrap {
@@ -147,7 +138,7 @@ body {
 
 .profile-rank {
   margin-top: 14px;
-  text-align: center; /* ✅ centers emblem + text */
+  text-align: center;
 }
 
 .profile-rank .rank-emblem {
@@ -248,17 +239,11 @@ body {
   font-size: 14px;
 }
 
-/* ----------------------
-   LP Graph
------------------------ */
 .lp-card .recharts-wrapper {
   border-radius: 12px;
   overflow: hidden;
 }
 
-/* ----------------------
-   Top Champions
------------------------ */
 .topchamps-card .champ-list {
   display: flex;
   flex-direction: column;
@@ -282,9 +267,6 @@ body {
   font-weight: 600;
 }
 
-/* ----------------------
-   Match List
------------------------ */
 .match-list h3 {
   margin: 0 0 12px 0;
   font-size: 18px;
@@ -300,21 +282,26 @@ body {
   border-radius: 12px;
   background: #0c1323;
   margin-bottom: 10px;
-  transition: box-shadow 0.25s ease, background 0.25s ease;
+  transition:
+    box-shadow 0.25s ease,
+    background 0.25s ease;
 }
 .match-row.win {
   background: linear-gradient(180deg, rgba(42, 168, 111, 0.12), #0c1323 40%);
-  box-shadow: 0 0 18px rgba(42, 168, 111, 0.25),
+  box-shadow:
+    0 0 18px rgba(42, 168, 111, 0.25),
     0 0 6px rgba(42, 168, 111, 0.2) inset;
 }
 .match-row.loss {
   background: linear-gradient(180deg, rgba(211, 78, 78, 0.12), #0c1323 40%);
-  box-shadow: 0 0 18px rgba(211, 78, 78, 0.25),
+  box-shadow:
+    0 0 18px rgba(211, 78, 78, 0.25),
     0 0 6px rgba(211, 78, 78, 0.2) inset;
 }
 .match-row.remake {
   background: linear-gradient(180deg, rgba(154, 167, 199, 0.12), #0c1323 40%);
-  box-shadow: 0 0 18px rgba(154, 167, 199, 0.25),
+  box-shadow:
+    0 0 18px rgba(154, 167, 199, 0.25),
     0 0 6px rgba(154, 167, 199, 0.2) inset;
   opacity: 0.97;
 }

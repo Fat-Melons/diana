@@ -1,6 +1,3 @@
-
-import type { MatchSummary } from "../types/riot";
-
 export function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const s = Math.floor(diff / 1000);
@@ -49,27 +46,4 @@ export function getRoleNameTranslation(role: string): string {
     ["UTILITY", "Support"],
   ]);
   return roleMap.get(role?.toUpperCase?.() ?? "") || "Unknown";
-}
-
-export function deriveProfileStats(matches: MatchSummary[]) {
-  const ranked = matches.filter((m) => (m.queueId ?? (m as any).queue_id) === 420);
-  const sample = ranked.slice(0, 20);
-
-  let wins = 0, k = 0, d = 0, a = 0, streak = 0;
-  for (let i = 0; i < sample.length; i++) {
-    const m = sample[i];
-    const isWin = m.result === "Win";
-    if (i === 0) streak = isWin ? 1 : -1;
-    else streak = (streak > 0 && isWin) || (streak < 0 && !isWin) ? (isWin ? streak + 1 : streak - 1) : (isWin ? 1 : -1);
-    wins += isWin ? 1 : 0;
-    k += m.kills;
-    d += m.deaths;
-    a += m.assists;
-  }
-
-  const games = sample.length;
-  const winrate = games ? Math.round((wins / games) * 100) : 0;
-  const kda = d ? (k + a) / d : (k + a);
-
-  return { winrate, games, streak, kda };
 }
