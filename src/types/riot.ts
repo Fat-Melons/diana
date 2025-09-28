@@ -19,7 +19,10 @@ export type MatchSummary = {
   queue_id: number;
   game_creation_ms: number;
   game_duration_s: number;
+
   win: boolean;
+  result?: "Win" | "Loss" | "Remake";
+  lpDelta?: number | null;
 
   champion_name: string;
   champion_icon_url: string;

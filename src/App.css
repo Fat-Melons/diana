@@ -6,6 +6,8 @@
   --win: #2aa86f;
   --loss: #d34e4e;
   --border: #1f2942;
+  --accent: #4a8cff;
+  --gold: #ffd86b;
 }
 
 * {
@@ -47,16 +49,146 @@ body {
   padding: 16px;
 }
 
-.profile-card .profile-header {
+/* ----------------------
+   Shared Card Styling
+----------------------- */
+.fancy-card {
+  background: #0c1323;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--accent);
+}
+.badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #1a2235;
+  border: 1px solid var(--border);
+}
+.badge.small {
+  font-size: 12px;
+}
+.badge.muted {
+  color: var(--muted);
+}
+
+/* ----------------------
+   Profile Card
+----------------------- */
+/* ----------------------
+   Profile Card
+----------------------- */
+.profile-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px; /* a little more spacing */
 }
+
+.avatar-wrap {
+  position: relative;
+}
+
 .profile-icon {
   width: 64px;
   height: 64px;
   border-radius: 12px;
   border: 2px solid var(--border);
+}
+
+.streak-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.streak-badge.win {
+  background: var(--win);
+  color: #fff;
+}
+.streak-badge.loss {
+  background: var(--loss);
+  color: #fff;
+}
+
+.profile-meta {
+  margin-top: 4px;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 20px;
+}
+
+.tag {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: small;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.profile-rank {
+  margin-top: 14px;
+  text-align: center; /* ✅ centers emblem + text */
+}
+
+.profile-rank .rank-emblem {
+  display: block;
+  margin: 0 auto 6px auto;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+}
+
+.rank-line {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.lp-line {
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.profile-quick {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+}
+.streak-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.streak-badge.win {
+  background: var(--win);
+  color: #fff;
+}
+.streak-badge.loss {
+  background: var(--loss);
+  color: #fff;
 }
 .rank-emblem {
   width: 64px;
@@ -92,7 +224,67 @@ body {
   color: var(--muted);
   margin-top: 2px;
 }
+.profile-quick {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.quick-pill {
+  background: #121a2d;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.quick-pill .label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.quick-pill .value {
+  font-weight: 600;
+  font-size: 14px;
+}
 
+/* ----------------------
+   LP Graph
+----------------------- */
+.lp-card .recharts-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ----------------------
+   Top Champions
+----------------------- */
+.topchamps-card .champ-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.champ-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.champ-badge img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.champ-meta {
+  flex: 1;
+}
+.champ-name {
+  font-weight: 600;
+}
+
+/* ----------------------
+   Match List
+----------------------- */
 .match-list h3 {
   margin: 0 0 12px 0;
   font-size: 18px;
@@ -100,7 +292,6 @@ body {
 
 .match-row {
   display: grid;
-  /* champ | meta | kda | gpm | kp | dmg | role/stats | items */
   grid-template-columns: 1.1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1.4fr;
   gap: 12px;
   align-items: center;
@@ -109,29 +300,21 @@ body {
   border-radius: 12px;
   background: #0c1323;
   margin-bottom: 10px;
-  transition:
-    box-shadow 0.25s ease,
-    background 0.25s ease;
+  transition: box-shadow 0.25s ease, background 0.25s ease;
 }
-
 .match-row.win {
   background: linear-gradient(180deg, rgba(42, 168, 111, 0.12), #0c1323 40%);
-  box-shadow:
-    0 0 18px rgba(42, 168, 111, 0.25),
+  box-shadow: 0 0 18px rgba(42, 168, 111, 0.25),
     0 0 6px rgba(42, 168, 111, 0.2) inset;
 }
-
 .match-row.loss {
   background: linear-gradient(180deg, rgba(211, 78, 78, 0.12), #0c1323 40%);
-  box-shadow:
-    0 0 18px rgba(211, 78, 78, 0.25),
+  box-shadow: 0 0 18px rgba(211, 78, 78, 0.25),
     0 0 6px rgba(211, 78, 78, 0.2) inset;
 }
-
 .match-row.remake {
   background: linear-gradient(180deg, rgba(154, 167, 199, 0.12), #0c1323 40%);
-  box-shadow:
-    0 0 18px rgba(154, 167, 199, 0.25),
+  box-shadow: 0 0 18px rgba(154, 167, 199, 0.25),
     0 0 6px rgba(154, 167, 199, 0.2) inset;
   opacity: 0.97;
 }
@@ -210,7 +393,7 @@ body {
   font-size: 16px;
 }
 .gold {
-  color: #ffd86b;
+  color: var(--gold);
 }
 
 .items-col .items-main {
@@ -248,13 +431,6 @@ body {
 }
 .trinket.empty {
   opacity: 0.35;
-}
-
-.muted {
-  color: var(--muted);
-}
-.small {
-  font-size: 12px;
 }
 
 @media (max-width: 1000px) {

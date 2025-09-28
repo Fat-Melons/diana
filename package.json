@@ -15,10 +15,11 @@
     "@tauri-apps/plugin-opener": "^2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "recharts": "^3.2.1",
     "url-join": "^5.0.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
+    "@tauri-apps/cli": "^2.8.4",
     "@types/react": "^19.1.14",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^4.6.0",

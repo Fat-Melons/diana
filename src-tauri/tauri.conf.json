@@ -25,5 +25,10 @@
     "active": true,
     "targets": "all",
     "icon": ["icons/diana.ico"]
+  },
+  "plugins": {
+    "opener": {
+      "permissions": ["default"]
+    }
   }
 }
