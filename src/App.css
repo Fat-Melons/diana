@@ -9,7 +9,6 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; }
 body {
   margin: 0;
   color: var(--text);
@@ -25,7 +24,7 @@ body {
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr 3fr; /* 25% / 75% */
+  grid-template-columns: 1fr 3fr;
   gap: 16px;
 }
 
@@ -68,40 +67,115 @@ body {
 
 .match-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  /* champ | meta | kda | gpm | kp | dmg | role/stats | items */
+  grid-template-columns: 1.1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1.4fr;
+  gap: 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 12px;
   background: #0c1323;
+  margin-bottom: 10px;
+  transition: box-shadow 0.25s ease, background 0.25s ease;
 }
-.match-row.win { box-shadow: inset 0 0 0 1px rgba(42,168,111,0.15); }
-.match-row.loss { box-shadow: inset 0 0 0 1px rgba(211,78,78,0.15); }
 
-.match-row .left {
-  display: flex; gap: 12px; align-items: center;
+.match-row.win {
+  background: linear-gradient(
+    180deg,
+    rgba(42,168,111,0.12),
+    #0c1323 40%
+  );
+  box-shadow:
+    0 0 18px rgba(42,168,111,0.25),
+    0 0 6px rgba(42,168,111,0.2) inset;
 }
-.match-row .queue { font-weight: 600; }
-.champ {
-  width: 44px; height: 44px; border-radius: 8px;
+
+.match-row.loss {
+  background: linear-gradient(
+    180deg,
+    rgba(211,78,78,0.12),
+    #0c1323 40%
+  );
+  box-shadow:
+    0 0 18px rgba(211,78,78,0.25),
+    0 0 6px rgba(211,78,78,0.2) inset;
+}
+
+.match-row.remake {
+  background: linear-gradient(
+    180deg,
+    rgba(154,167,199,0.12),
+    #0c1323 40%
+  );
+  box-shadow:
+    0 0 18px rgba(154,167,199,0.25),
+    0 0 6px rgba(154,167,199,0.2) inset;
+  opacity: 0.97;
+}
+
+.col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+.col-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .02em;
+}
+.col-head .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
+}
+.col-head .icon { opacity: .9 }
+.col-main { font-weight: 600; }
+
+.champ-col .champ-wrap { position: relative; width: 48px; height: 48px; }
+.champ-col .champ {
+  width: 48px; height: 48px; border-radius: 10px; border: 1px solid var(--border);
+  display: block;
+}
+.role-badge {
+  position: absolute; bottom: -6px; right: -6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #1a2235; border: 1px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--text);
+}
+
+.queue { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.kda { font-size: 16px; font-weight: 800; }
+.big { font-size: 16px; }
+.gold { color: #ffd86b; }
+
+.items-col .items-main {
+  display: flex; align-items: center; gap: 8px;
+}
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  grid-template-rows: repeat(2, 24px);
+  gap: 3px;
+}
+.item, .item.empty {
+  width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border);
+  background: #121a2d;
+}
+.item { object-fit: cover; }
+.item.empty { opacity: .35; }
+
+.trinket {
+  width: 22px; height: 22px; border-radius: 50%;
   border: 1px solid var(--border);
+  background: #121a2d;
 }
+.trinket.empty { opacity: .35; }
 
-.match-row .mid { text-align: center; }
-.kda { font-weight: 700; font-size: 16px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
 
-.match-row .right { text-align: right; }
-.result.win { color: var(--win); font-weight: 700; }
-.result.loss { color: var(--loss); font-weight: 700; }
-
-.error {
-  background: #2b1020; border: 1px solid #52243b; padding: 12px; border-radius: 12px;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-  .match-row { grid-template-columns: 1fr 1fr; }
-  .match-row .right { margin-top: 8px; text-align: left; grid-column: 1 / -1; }
+@media (max-width: 1000px) {
+  .match-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .items-col { grid-column: 1 / -1; }
 }

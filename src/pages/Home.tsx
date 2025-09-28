@@ -4,7 +4,7 @@ import type { PlayerOverview } from "../types/riot";
 import ProfileCard from "../components/ProfileCard";
 import MatchList from "../components/MatchList";
 
-const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
+const DEFAULT_USER = { name: "FM Pruhaps", region: "EUW", tag: "BAUSS" };
 
 const Home: React.FC = () => {
   const [data, setData] = useState<PlayerOverview | null>(null);

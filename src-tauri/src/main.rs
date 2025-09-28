@@ -1,18 +1,24 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
+mod match_summary;
+
+use crate::match_summary::{summarize_match, MatchSummary};
+
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 
-// --- Reusable request helper with full logging ---
 async fn get_with_riot_token<T: for<'de> serde::Deserialize<'de>>(
     client: &reqwest::Client,
     url: &str,
     key: &str,
 ) -> Result<T> {
     println!("[RiotAPI] GET {url}");
-
-    let res = client.get(url).header("X-Riot-Token", key).send().await?;
+    let res = client
+        .get(url)
+        .header("X-Riot-Token", key)
+        .send()
+        .await?;
     let status = res.status();
     let text = res.text().await.unwrap_or_default();
 
@@ -30,14 +36,14 @@ async fn get_with_riot_token<T: for<'de> serde::Deserialize<'de>>(
 
     let json = serde_json::from_str::<T>(&text)
         .map_err(|e| anyhow!("Failed to decode JSON: {} → {}", e, text))?;
+
     Ok(json)
 }
 
-// --- Types ---
 #[derive(Deserialize, Debug)]
 struct PlayerQuery {
     name: String,
-    tag: String, // Riot ID now requires tag
+    tag: String,
     region: String,
 }
 
@@ -54,28 +60,11 @@ struct PlayerProfile {
 }
 
 #[derive(Serialize, Debug)]
-struct MatchSummary {
-    match_id: String,
-    queue_id: i32,
-    game_creation_ms: i64,
-    game_duration_s: i64,
-    win: bool,
-    champion_name: String,
-    champion_icon_url: String,
-    kills: i32,
-    deaths: i32,
-    assists: i32,
-    cs: i32,
-    kda: f32,
-}
-
-#[derive(Serialize, Debug)]
 struct PlayerOverview {
     profile: PlayerProfile,
     matches: Vec<MatchSummary>,
 }
 
-// --- Command ---
 #[tauri::command]
 async fn get_player_overview(query: PlayerQuery) -> Result<PlayerOverview, String> {
     dotenvy::dotenv().ok();
@@ -89,50 +78,59 @@ async fn get_player_overview(query: PlayerQuery) -> Result<PlayerOverview, Strin
         .build()
         .map_err(|e| e.to_string())?;
 
-    // Step 1: Riot ID -> PUUID
-    let acct: AccountDto =
-        get_account_by_riot_id(&client, &api_key, &regional, &query.name, &query.tag)
-            .await
-            .map_err(|e| e.to_string())?;
+    // Riot ID -> PUUID
+    let acct: AccountDto = get_account_by_riot_id(
+        &client,
+        &api_key,
+        &regional,
+        &query.name,
+        &query.tag,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
 
-    // Step 2: Summoner info
-    let sum: SummonerDto =
-        get_summoner_by_puuid(&client, &api_key, &platform, &acct.puuid)
-            .await
-            .map_err(|e| e.to_string())?;
+    // Summoner info
+    let sum: SummonerDto = get_summoner_by_puuid(&client, &api_key, &platform, &acct.puuid)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    // Step 3: Rank (new endpoint: by-puuid)
+    // Rank (new endpoint: by-puuid)
     let (tier, division, lp) =
         get_rank_solo(&client, &api_key, &platform, &acct.puuid)
             .await
             .map_err(|e| e.to_string())?;
 
-    // Step 4: Profile icon
+    // Profile icon
     let ddragon_version = get_latest_ddragon_version(&client)
         .await
         .map_err(|e| e.to_string())?;
+
     let profile_icon_url = format!(
         "https://ddragon.leagueoflegends.com/cdn/{}/img/profileicon/{}.png",
         ddragon_version, sum.profileIconId
     );
 
-    // Step 5: Matches
-    let match_ids =
-        get_match_ids(&client, &api_key, &regional, &acct.puuid, 0, 10)
-            .await
-            .map_err(|e| e.to_string())?;
+    // Matches
+    let match_ids = get_match_ids(&client, &api_key, &regional, &acct.puuid, 0, 10)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let mut matches = Vec::with_capacity(match_ids.len());
     for mid in match_ids {
         if let Ok(ms) =
-            summarize_match(&client, &api_key, &regional, &mid, &acct.puuid, &ddragon_version).await
+            summarize_match(&client, &api_key, &regional, &mid, &acct.puuid, &ddragon_version)
+                .await
         {
             matches.push(ms);
         }
     }
 
     let profile = PlayerProfile {
-        name: if sum.name.is_empty() { acct.gameName.clone() } else { sum.name.clone() },
+        name: if sum.name.is_empty() {
+            acct.gameName.clone()
+        } else {
+            sum.name.clone()
+        },
         tagline: acct.tagLine.clone(),
         region: query.region.to_uppercase(),
         summoner_level: sum.summonerLevel as u32,
@@ -145,7 +143,6 @@ async fn get_player_overview(query: PlayerQuery) -> Result<PlayerOverview, Strin
     Ok(PlayerOverview { profile, matches })
 }
 
-// --- Region mapping ---
 fn map_region(region: &str) -> Option<(&'static str, &'static str)> {
     match region.to_ascii_uppercase().as_str() {
         "EUW" | "EUW1" => Some(("euw1", "europe")),
@@ -163,7 +160,6 @@ fn map_region(region: &str) -> Option<(&'static str, &'static str)> {
     }
 }
 
-// --- API helpers ---
 async fn get_account_by_riot_id(
     client: &reqwest::Client,
     key: &str,
@@ -203,8 +199,13 @@ async fn get_rank_solo(
         "https://{}.api.riotgames.com/lol/league/v4/entries/by-puuid/{}",
         platform, puuid
     );
+
     let entries: Vec<LeagueEntryDto> = get_with_riot_token(client, &url, key).await?;
-    if let Some(solo) = entries.into_iter().find(|e| e.queueType == "RANKED_SOLO_5x5") {
+
+    if let Some(solo) = entries
+        .into_iter()
+        .find(|e| e.queueType == "RANKED_SOLO_5x5")
+    {
         Ok((Some(solo.tier), Some(solo.rank), Some(solo.leaguePoints)))
     } else {
         Ok((None, None, None))
@@ -226,58 +227,12 @@ async fn get_match_ids(
     get_with_riot_token(client, &url, key).await
 }
 
-async fn summarize_match(
-    client: &reqwest::Client,
-    key: &str,
-    regional: &str,
-    match_id: &str,
-    puuid: &str,
-    ddragon_version: &str,
-) -> Result<MatchSummary> {
-    let url = format!(
-        "https://{}.api.riotgames.com/lol/match/v5/matches/{}",
-        regional, match_id
-    );
-    let m: MatchDto = get_with_riot_token(client, &url, key).await?;
-    let p = m
-        .info
-        .participants
-        .into_iter()
-        .find(|p| p.puuid == puuid)
-        .ok_or_else(|| anyhow!("Participant not found"))?;
-    let cs = p.totalMinionsKilled.unwrap_or(0) + p.neutralMinionsKilled.unwrap_or(0);
-    let kda = if p.deaths == 0 {
-        (p.kills + p.assists) as f32
-    } else {
-        (p.kills + p.assists) as f32 / p.deaths as f32
-    };
-    let champ_icon = format!(
-        "https://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png",
-        ddragon_version, p.championName
-    );
-    Ok(MatchSummary {
-        match_id: match_id.to_string(),
-        queue_id: m.info.queueId,
-        game_creation_ms: m.info.gameCreation,
-        game_duration_s: m.info.gameDuration,
-        win: p.win,
-        champion_name: p.championName,
-        champion_icon_url: champ_icon,
-        kills: p.kills,
-        deaths: p.deaths,
-        assists: p.assists,
-        cs,
-        kda: (kda * 100.0).round() / 100.0,
-    })
-}
-
 async fn get_latest_ddragon_version(client: &reqwest::Client) -> Result<String> {
     let url = "https://ddragon.leagueoflegends.com/api/versions.json";
     let versions: Vec<String> = get_with_riot_token(client, url, "").await?;
     versions.into_iter().next().ok_or_else(|| anyhow!("No versions"))
 }
 
-// --- DTOs ---
 #[derive(Deserialize, Debug)]
 struct AccountDto {
     puuid: String,
@@ -310,6 +265,7 @@ struct LeagueEntryDto {
 struct MatchDto {
     info: MatchInfo,
 }
+
 #[derive(Deserialize, Debug)]
 struct MatchInfo {
     gameCreation: i64,
@@ -317,6 +273,7 @@ struct MatchInfo {
     queueId: i32,
     participants: Vec<ParticipantDto>,
 }
+
 #[derive(Deserialize, Debug)]
 struct ParticipantDto {
     puuid: String,
@@ -331,7 +288,6 @@ struct ParticipantDto {
     neutralMinionsKilled: Option<i32>,
 }
 
-// --- Entry point ---
 pub fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_player_overview])

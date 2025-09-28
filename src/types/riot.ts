@@ -6,27 +6,48 @@ export type PlayerOverview = {
 export type PlayerProfile = {
   name: string;
   tagline?: string | null;
-  region: string; // e.g., "EUW"
+  region: string;
   summoner_level: number;
   profile_icon_url: string;
-  tier?: string | null;     // e.g., "GOLD"
-  division?: string | null; // e.g., "II"
-  lp?: number | null;       // League Points
+  tier?: string | null;
+  division?: string | null;
+  lp?: number | null;
 };
 
 export type MatchSummary = {
   match_id: string;
-  queue_id: number;         // 420, 440, 400, etc.
-  game_creation_ms: number; // epoch ms
-  game_duration_s: number;  // seconds
+  queue_id: number;
+  game_creation_ms: number;
+  game_duration_s: number;
   win: boolean;
 
-  champion_name: string;     // e.g., "Ahri"
-  champion_icon_url: string; // DDragon icon URL
+  champion_name: string;
+  champion_icon_url: string;
 
   kills: number;
   deaths: number;
   assists: number;
-  cs: number;                // total minions + jungle
-  kda: number;               // rounded to 2 decimals server-side
+  cs: number;
+  kda: number;
+
+  role: string;
+  gold_earned: number;
+
+  items: [number, number, number, number, number, number];
+  trinket: number;
+
+  damage_dealt: number;
+  damage_taken: number;
+  vision_score: number;
+  kill_participation: number;
+  turret_takedowns: number;
+  dragon_kills: number;
+  baron_kills: number;
+
+  ddragon_version: string;
+
+  gpm: number;
+  cs_per_min: number;
+  vision_per_min: number;
 };
+

@@ -12,10 +12,10 @@ export function timeAgo(ms: number): string {
 
 export function queueName(queueId: number): string {
   switch (queueId) {
-    case 420: return "Ranked Solo/Duo";
+    case 420: return "Ranked";
     case 440: return "Ranked Flex";
-    case 400: return "Normal Draft";
-    case 430: return "Normal Blind";
+    case 400: return "Draft";
+    case 430: return "Blind";
     case 450: return "ARAM";
     default:  return `Queue ${queueId}`;
   }
@@ -29,4 +29,15 @@ export function rankEmblemFromTier(tier?: string | null): string | null {
   if (!tier) return null;
   const key = tier.toLowerCase();
   return `/src/assets/ranked-emblem/${key}.webp`;
+}
+
+export function getRoleNameTranslation(role: string): string {
+  const roleMap = new Map<string, string>([
+    ['TOP', 'Top'],
+    ['JUNGLE', 'Jungle'],
+    ['MIDDLE', 'Mid'],
+    ['BOTTOM', 'ADC'],
+    ['UTILITY', 'Support'],
+  ]);
+  return roleMap.get(role?.toUpperCase?.() ?? "") || 'Unknown';
 }
