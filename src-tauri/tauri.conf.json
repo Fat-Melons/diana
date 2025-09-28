@@ -25,6 +25,7 @@
     "active": true,
     "targets": "all",
     "icon": [
+      "icons/diana.ico"
     ]
   }
 }

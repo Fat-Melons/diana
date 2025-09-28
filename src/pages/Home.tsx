@@ -4,7 +4,7 @@ import type { PlayerOverview } from "../types/riot";
 import ProfileCard from "../components/ProfileCard";
 import MatchList from "../components/MatchList";
 
-const DEFAULT_USER = { name: "LR Stew", region: "EUW" };
+const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
 
 const Home: React.FC = () => {
   const [data, setData] = useState<PlayerOverview | null>(null);
@@ -14,7 +14,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetchOverview(DEFAULT_USER.name, DEFAULT_USER.region);
+        const res = await fetchOverview(DEFAULT_USER.name, DEFAULT_USER.region, DEFAULT_USER.tag);
         setData(res);
       } catch (e: any) {
         setError(e?.message ?? String(e));
