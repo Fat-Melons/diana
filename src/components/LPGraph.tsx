@@ -22,9 +22,9 @@ const TIER_COLORS: Record<string, string> = {
   IRON: "#726f6a",
   BRONZE: "#8c5a3c",
   SILVER: "#9fa9b3",
-  GOLD: "#ffd86b",
+  GOLD: "var(--gold)",
   PLATINUM: "#4cc7b0",
-  EMERALD: "#2aa86f",
+  EMERALD: "var(--win)",
   DIAMOND: "#4da3ff",
   MASTER: "#c06bff",
   GRANDMASTER: "#ff5d5d",
@@ -37,7 +37,7 @@ const LPGraph: React.FC<LPGraphProps> = ({
   tier,
 }) => {
   const isRanked = !!tier;
-  const color = TIER_COLORS[(tier || "EMERALD").toUpperCase()] || "#2aa86f";
+  const color = TIER_COLORS[(tier || "EMERALD").toUpperCase()] || "var(--win)";
 
   const { data, hasExact, boundaries } = useMemo(() => {
     if (!ranked_progress || ranked_progress.length === 0)
@@ -96,20 +96,20 @@ const LPGraph: React.FC<LPGraphProps> = ({
             <YAxis tick={{ fontSize: 12 }} width={32} domain={[0, 100]} />
             <Tooltip
               contentStyle={{
-                background: "#0c1323",
+                background: "var(--surface-2)",
                 border: "1px solid var(--border)",
               }}
               labelFormatter={(v: any) => `Game ${v}`}
               formatter={(value: any) => [`${value} LP`, "LP"]}
             />
-            <ReferenceLine y={0} stroke="#1f2942" />
-            <ReferenceLine y={100} stroke="#1f2942" />
+            <ReferenceLine y={0} stroke="var(--border)" />
+            <ReferenceLine y={100} stroke="var(--border)" />
 
             {boundaries.map((x) => (
               <ReferenceLine
                 key={x}
                 x={x}
-                stroke="#1f2942"
+                stroke="var(--border)"
                 strokeDasharray="3 3"
               />
             ))}

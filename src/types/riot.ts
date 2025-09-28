@@ -47,6 +47,8 @@ export type MatchSummary = {
   dragon_kills: number;
   baron_kills: number;
   ddragon_version: string;
+  vision_per_min: number;
+  cs_per_min: number;
 };
 
 export type TopChamp = {

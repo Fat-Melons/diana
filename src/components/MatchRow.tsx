@@ -4,7 +4,6 @@ import {
   queueName,
   timeAgo,
   formatKDA,
-  getRoleNameTranslation,
 } from "../utils/format";
 
 const numK = (n: number) => {
