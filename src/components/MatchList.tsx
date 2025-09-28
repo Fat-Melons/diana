@@ -6,7 +6,9 @@ const MatchList: React.FC<{ matches: MatchSummary[] }> = ({ matches }) => {
   return (
     <section className="match-list">
       <h3>Recent Matches</h3>
-      {matches.map((m) => <MatchRow key={m.match_id} match={m} />)}
+      {matches.map((m) => (
+        <MatchRow key={m.match_id} match={m} />
+      ))}
       {matches.length === 0 && <div className="muted">No matches found.</div>}
     </section>
   );

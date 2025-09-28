@@ -1,9 +1,15 @@
 import React from "react";
 import type { MatchSummary } from "../types/riot";
-import { queueName, timeAgo, formatKDA, getRoleNameTranslation } from "../utils/format";
+import {
+  queueName,
+  timeAgo,
+  formatKDA,
+  getRoleNameTranslation,
+} from "../utils/format";
 
 const numK = (n: number) => {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + "M";
+  if (n >= 1_000_000)
+    return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1) + "k";
   return `${n}`;
 };
@@ -16,19 +22,31 @@ const itemIconUrl = (id: number, ver: string) =>
 const roleIsSupport = (role: string) => role?.toUpperCase() === "UTILITY";
 
 const Trinket: React.FC<{ id: number; ver: string }> = ({ id, ver }) => {
-  if (!id) return <span className="trinket empty" title="No trinket equipped" aria-label="No trinket" />;
+  if (!id)
+    return (
+      <span
+        className="trinket empty"
+        title="No trinket equipped"
+        aria-label="No trinket"
+      />
+    );
   return (
     <img
       className="trinket"
       src={itemIconUrl(id, ver)}
       alt="Trinket"
       loading="lazy"
-      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+      }}
     />
   );
 };
 
-const ItemsGrid: React.FC<{ slots: number[]; ver: string }> = ({ slots, ver }) => {
+const ItemsGrid: React.FC<{ slots: number[]; ver: string }> = ({
+  slots,
+  ver,
+}) => {
   const six = [...slots];
   while (six.length < 6) six.push(0);
 
@@ -43,19 +61,23 @@ const ItemsGrid: React.FC<{ slots: number[]; ver: string }> = ({ slots, ver }) =
             alt={`Item ${id}`}
             loading="lazy"
             title={`Item ID ${id}`}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+            }}
           />
         ) : (
           <div key={i} className="item empty" aria-hidden="true" />
-        )
+        ),
       )}
     </div>
   );
 };
 
-const StatCol: React.FC<{ label: string; value: React.ReactNode; title?: string }> = ({
-  label, value, title
-}) => (
+const StatCol: React.FC<{
+  label: string;
+  value: React.ReactNode;
+  title?: string;
+}> = ({ label, value, title }) => (
   <div className="col stat" title={title ?? label} aria-label={label}>
     <div className="col-head">
       <span className="label">{label}</span>
@@ -76,21 +98,28 @@ const RoleStat: React.FC<{ match: MatchSummary }> = ({ match }) => {
           <span>{match.cs_per_min.toFixed(1)}</span>
         )
       }
-      title={isSup ? "Vision Score per Minute (Support)" : "Creep Score per Minute"}
+      title={
+        isSup ? "Vision Score per Minute (Support)" : "Creep Score per Minute"
+      }
     />
   );
 };
 
 const formatDurationMin = (s: number) => `${Math.round(s / 60)}m`;
 
-
 const ChampCell: React.FC<{ match: MatchSummary }> = ({ match }) => (
   <div className="col champ-col">
     <div className="champ-wrap" title={match.champion_name}>
-      <img className="champ" src={match.champion_icon_url} alt={match.champion_name} loading="lazy" />
+      <img
+        className="champ"
+        src={match.champion_icon_url}
+        alt={match.champion_name}
+        loading="lazy"
+      />
     </div>
     <div className="sub muted small">
-      {timeAgo(match.game_creation_ms)} • {formatDurationMin(match.game_duration_s)}
+      {timeAgo(match.game_creation_ms)} •{" "}
+      {formatDurationMin(match.game_duration_s)}
     </div>
   </div>
 );
@@ -101,7 +130,9 @@ const MetaCol: React.FC<{ match: MatchSummary }> = ({ match }) => (
       <span className="label">Match</span>
     </div>
     <div className="col-main">
-      <div className="queue" title={`Queue: ${queueName(match.queue_id)}`}>{queueName(match.queue_id)}</div>
+      <div className="queue" title={`Queue: ${queueName(match.queue_id)}`}>
+        {queueName(match.queue_id)}
+      </div>
     </div>
   </div>
 );
@@ -111,7 +142,9 @@ const KDACol: React.FC<{ match: MatchSummary }> = ({ match }) => (
     label="K/D/A"
     value={
       <>
-        <div className="kda">{formatKDA(match.kills, match.deaths, match.assists)}</div>
+        <div className="kda">
+          {formatKDA(match.kills, match.deaths, match.assists)}
+        </div>
         <div className="muted small">{match.kda.toFixed(2)} KDA</div>
       </>
     }
@@ -156,7 +189,11 @@ const ItemsCol: React.FC<{ match: MatchSummary }> = ({ match }) => (
 );
 
 const MatchRow: React.FC<{ match: MatchSummary }> = ({ match }) => {
-  const resultClass = match.win ? "win" : (match.game_duration_s <= 300 ? "remake" : "loss");
+  const resultClass = match.win
+    ? "win"
+    : match.game_duration_s <= 300
+      ? "remake"
+      : "loss";
 
   return (
     <div className={`match-row ${resultClass}`}>

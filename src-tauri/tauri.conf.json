@@ -24,8 +24,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": [
-      "icons/diana.ico"
-    ]
+    "icon": ["icons/diana.ico"]
   }
 }

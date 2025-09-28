@@ -50,4 +50,3 @@ export type MatchSummary = {
   cs_per_min: number;
   vision_per_min: number;
 };
-
