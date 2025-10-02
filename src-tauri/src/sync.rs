@@ -103,6 +103,7 @@ pub async fn sync_player_and_get_overview(
     );
 
     let profile = PlayerProfile {
+        puuid: acct.puuid.clone(),
         name: if sum.name.is_empty() { acct.gameName.clone() } else { sum.name.clone() },
         tagline: acct.tagLine.clone(),
         region: query_region.to_uppercase(),

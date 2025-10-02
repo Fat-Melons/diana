@@ -8,9 +8,21 @@ pub struct PlayerQuery {
     pub region: String,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct MatchQuery {
+    pub match_id: String,
+    pub user_puuid: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ActivityQuery {
+    pub user_puuid: String,
+}
+
 
 #[derive(Serialize, Debug)]
 pub struct PlayerProfile {
+    pub puuid: String,
     pub name: String,
     pub tagline: String,
     pub region: String,
@@ -101,6 +113,8 @@ pub struct ParticipantDto {
     #[serde(default)]
     pub teamPosition: String,
     #[serde(default)]
+    pub teamId: i32,
+    #[serde(default)]
     pub challenges: Option<ChallengesDto>,
     #[serde(default)]
     pub turretTakedowns: i32,
@@ -174,6 +188,52 @@ pub struct RankStep {
     pub tier_after: String,
     pub division_after: String,
     pub exact: bool,
+}
+
+#[derive(Serialize, Debug)]
+pub struct MatchParticipantDetail {
+    pub puuid: String,
+    pub summoner_name: String,
+    pub champion_name: String,
+    pub champion_icon_url: String,
+    pub kills: i32,
+    pub deaths: i32,
+    pub assists: i32,
+    pub cs: i32,
+    pub kda: f32,
+    pub role: String,
+    pub gold_earned: i32,
+    pub gpm: f32,
+    pub cs_per_min: f32,
+    pub vision_per_min: f32,
+    pub items: [i32; 6],
+    pub trinket: i32,
+    pub damage_dealt: i32,
+    pub damage_taken: i32,
+    pub vision_score: i32,
+    pub kill_participation: f32,
+    pub turret_takedowns: i32,
+    pub dragon_kills: i32,
+    pub baron_kills: i32,
+    pub win: bool,
+    pub team: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct MatchDetails {
+    pub match_id: String,
+    pub queue_id: i32,
+    pub game_creation_ms: i64,
+    pub game_duration_s: i64,
+    pub participants: Vec<MatchParticipantDetail>,
+    pub user_puuid: String,
+    pub ddragon_version: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct DailyActivityEntry {
+    pub date: String,
+    pub games: i32,
 }
 
 #[derive(Serialize, Debug)]

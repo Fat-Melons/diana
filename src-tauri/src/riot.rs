@@ -60,6 +60,19 @@ pub async fn get_account_by_riot_id(
     get_with_riot_token(client, &url, key).await
 }
 
+pub async fn get_account_by_puuid(
+    client: &Client,
+    key: &str,
+    regional: &str,
+    puuid: &str,
+) -> Result<AccountDto> {
+    let url = format!(
+        "https://{}.api.riotgames.com/riot/account/v1/accounts/by-puuid/{}",
+        regional, puuid
+    );
+    get_with_riot_token(client, &url, key).await
+}
+
 pub async fn get_summoner_by_puuid(
     client: &Client,
     key: &str,
@@ -145,4 +158,37 @@ pub async fn get_latest_ddragon_version(client: &reqwest::Client) -> Result<Stri
         .await?;
 
     Ok(v.clone())
+}
+
+pub async fn get_summoner_names_by_puuids(
+    client: &Client,
+    key: &str,
+    regional: &str,
+    puuids: &[String],
+) -> Result<std::collections::HashMap<String, String>> {
+    use tokio::time::{sleep, Duration};
+    
+    let mut summoner_names = std::collections::HashMap::new();
+    
+    for puuid in puuids {
+        match get_account_by_puuid(client, key, regional, puuid).await {
+            Ok(account) => {
+                let display_name = if account.tagLine.is_empty() {
+                    account.gameName.clone()
+                } else {
+                    format!("{}#{}", account.gameName, account.tagLine)
+                };
+                summoner_names.insert(puuid.clone(), display_name);
+            }
+            Err(e) => {
+                println!("[RiotAPI] Failed to fetch account for PUUID {}: {}", puuid, e);
+                let short_id = if puuid.len() >= 8 { &puuid[0..8] } else { puuid };
+                summoner_names.insert(puuid.clone(), format!("Player {}", short_id));
+            }
+        }
+        
+        sleep(Duration::from_millis(100)).await;
+    }
+    
+    Ok(summoner_names)
 }

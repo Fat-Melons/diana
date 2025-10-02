@@ -1,3 +1,6 @@
+let cachedItems: Record<string, any> | null = null;
+let cachedVersion: string | null = null;
+
 export function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const s = Math.floor(diff / 1000);
@@ -46,4 +49,101 @@ export function getRoleNameTranslation(role: string): string {
     ["UTILITY", "Support"],
   ]);
   return roleMap.get(role?.toUpperCase?.() ?? "") || "Unknown";
+}
+
+export async function getItemName(id: number, version: string): Promise<string> {
+  try {
+    if (!cachedItems || cachedVersion !== version) {
+      const res = await fetch(
+        `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/item.json`
+      );
+      if (!res.ok) throw new Error("Failed to fetch item data");
+      const data = await res.json();
+      cachedItems = data.data;
+      cachedVersion = version;
+    }
+
+    const item = cachedItems?.[id];
+    return item?.name ?? `Item ${id}`;
+  } catch (err) {
+    console.error("Error fetching item name:", err);
+    return `Item ${id}`;
+  }
+}
+
+export const numK = (n: number) => {
+  if (n >= 1_000_000)
+    return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1) + "k";
+  return `${n}`;
+};
+
+export const killPartPercentage = (p: number) => `${Math.round(p * 100)}%`;
+
+export const roleIsSupport = (role: string) => role?.toUpperCase() === "UTILITY";
+
+export const formatDurationMin = (s: number) => `${Math.round(s / 60)}m`;
+
+export const getBaseSummonerName = (name: string) => {
+  const hashIndex = name.indexOf('#');
+  return hashIndex !== -1 ? name.substring(0, hashIndex) : name;
+};
+
+export const TIERS = [
+  'IRON',
+  'BRONZE', 
+  'SILVER',
+  'GOLD',
+  'PLATINUM',
+  'EMERALD',
+  'DIAMOND',
+  'MASTER',
+  'GRANDMASTER',
+  'CHALLENGER'
+] as const;
+
+export const DIVISIONS = ['IV', 'III', 'II', 'I'] as const;
+
+export type Tier = typeof TIERS[number];
+export type Division = typeof DIVISIONS[number];
+
+export function getTierOrder(tier: string): number {
+  const index = TIERS.indexOf(tier.toUpperCase() as Tier);
+  return index === -1 ? 0 : index;
+}
+
+export function getDivisionOrder(division: string): number {
+  const index = DIVISIONS.indexOf(division as Division);
+  return index === -1 ? 0 : index;
+}
+
+export function rankToTotalLP(tier: string, division: string, lp: number): number {
+  const tierOrder = getTierOrder(tier);
+  const divisionOrder = getDivisionOrder(division);
+
+  const tierLP = tierOrder * 400;
+  const divisionLP = divisionOrder * 100;
+  
+  return tierLP + divisionLP + lp;
+}
+
+export function totalLPToRank(totalLP: number): { tier: string; division: string; lp: number } {
+  if (totalLP < 0) totalLP = 0;
+  
+  const tierIndex = Math.floor(totalLP / 400);
+  const remainingLP = totalLP % 400;
+  const divisionIndex = Math.floor(remainingLP / 100);
+  const lp = remainingLP % 100;
+  
+  const tier = TIERS[Math.min(tierIndex, TIERS.length - 1)];
+  const division = DIVISIONS[Math.min(divisionIndex, DIVISIONS.length - 1)];
+  
+  return { tier, division, lp };
+}
+
+export function formatRank(tier: string, division: string): string {
+  if (['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(tier.toUpperCase())) {
+    return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
+  }
+  return `${tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()} ${division}`;
 }

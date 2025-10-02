@@ -12,6 +12,7 @@ export type PlayerOverview = {
 };
 
 export type PlayerProfile = {
+  puuid: string;
   name: string;
   tagline?: string | null;
   region: string;
@@ -49,6 +50,7 @@ export type MatchSummary = {
   ddragon_version: string;
   vision_per_min: number;
   cs_per_min: number;
+  gpm: number;
 };
 
 export type TopChamp = {
@@ -72,4 +74,47 @@ export type RankStep = {
   tier_after: string;
   division_after: "I" | "II" | "III" | "IV";
   exact: boolean;
+};
+
+export type MatchParticipant = {
+  puuid: string;
+  summoner_name: string;
+  champion_name: string;
+  champion_icon_url: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  kda: number;
+  role: string;
+  gold_earned: number;
+  gpm: number;
+  cs_per_min: number;
+  vision_per_min: number;
+  items: [number, number, number, number, number, number];
+  trinket: number;
+  damage_dealt: number;
+  damage_taken: number;
+  vision_score: number;
+  kill_participation: number;
+  turret_takedowns: number;
+  dragon_kills: number;
+  baron_kills: number;
+  win: boolean;
+  team: "Blue" | "Red";
+};
+
+export type MatchDetails = {
+  match_id: string;
+  queue_id: number;
+  game_creation_ms: number;
+  game_duration_s: number;
+  participants: MatchParticipantDetail[];
+  user_puuid: string;
+  ddragon_version: string;
+};
+
+export type DailyActivityEntry = {
+  date: string;
+  games: number;
 };

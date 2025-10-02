@@ -358,6 +358,52 @@ pub async fn compute_player_summary(
     ))
 }
 
+pub async fn get_daily_activity(
+    pool: &PgPool,
+    puuid: &str,
+) -> Result<Vec<crate::models::DailyActivityEntry>> {
+    let rows = sqlx::query!(
+        r#"
+        WITH daily_counts AS (
+            SELECT 
+                DATE(to_timestamp("gameCreation" / 1000)) as game_date,
+                COUNT(*) as games
+            FROM public.match_details
+            WHERE "entryPlayerPuuid" = $1
+                AND "gameCreation" >= extract(epoch from (now() - interval '30 days')) * 1000
+                AND "queueType" = 420
+            GROUP BY DATE(to_timestamp("gameCreation" / 1000))
+        ),
+        date_series AS (
+            SELECT generate_series(
+                CURRENT_DATE - interval '29 days',
+                CURRENT_DATE,
+                interval '1 day'
+            )::date as date
+        )
+        SELECT 
+            ds.date::text as date,
+            COALESCE(dc.games, 0)::int as games
+        FROM date_series ds
+        LEFT JOIN daily_counts dc ON ds.date = dc.game_date
+        ORDER BY ds.date
+        "#,
+        puuid
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut entries = Vec::new();
+    for row in rows {
+        entries.push(crate::models::DailyActivityEntry {
+            date: row.date.unwrap_or_default(),
+            games: row.games.unwrap_or(0),
+        });
+    }
+
+    Ok(entries)
+}
+
 pub async fn compute_rank_progress_and_cache(
     pool: &PgPool,
     puuid: &str,

@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { fetchOverview } from "../lib/api";
-import type { PlayerOverview } from "../types/riot";
+import { fetchOverview, fetchDailyActivity } from "../lib/api";
+import type { PlayerOverview, DailyActivityEntry } from "../types/riot";
 import ProfileCard from "../components/ProfileCard";
 import MatchList from "../components/MatchList";
-import LPGraph from "../components/LPGraph";
 import TopChamps from "../components/TopChamps";
+import ActivityGraph from "../components/ActivityGraph";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
 
 const Home: React.FC = () => {
   const [data, setData] = useState<PlayerOverview | null>(null);
+  const [activityData, setActivityData] = useState<DailyActivityEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,6 +24,12 @@ const Home: React.FC = () => {
           DEFAULT_USER.tag,
         );
         setData(res);
+        try {
+          const activityRes = await fetchDailyActivity(res.profile.puuid);
+          setActivityData(activityRes);
+        } catch (activityError) {
+          console.error("Failed to fetch activity data:", activityError);
+        }
       } catch (e: any) {
         setError(e?.message ?? String(e));
       } finally {
@@ -30,12 +38,7 @@ const Home: React.FC = () => {
     })();
   }, []);
 
-  if (loading)
-    return (
-      <div className="container">
-        <div className="muted">Loading…</div>
-      </div>
-    );
+  if (loading) return <LoadingSpinner />;
   if (error)
     return (
       <div className="container">
@@ -47,8 +50,9 @@ const Home: React.FC = () => {
   const { profile, matches, stats, top_champs, ranked_progress } = data;
 
   return (
-    <div className="container grid">
-      <div className="left-col">
+    <>
+      <div className="container grid">
+        <div className="left-col">
         <ProfileCard
           name={profile.name}
           tagline={profile.tagline}
@@ -61,21 +65,17 @@ const Home: React.FC = () => {
           stats={stats}
         />
 
-        <LPGraph
-          ranked_progress={ranked_progress}
-          currentLP={profile.lp}
-          tier={profile.tier}
-          division={profile.division}
-        />
+        <ActivityGraph entries={activityData} />
 
         <TopChamps champs={top_champs} />
       </div>
 
-      <div className="right-col">
-        <MatchList matches={matches} />
+        <div className="right-col">
+          <MatchList matches={matches} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
-
+ 
 export default Home;
