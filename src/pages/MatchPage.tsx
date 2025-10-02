@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchMatchDetails, fetchOverview } from "../lib/api";
 import type { MatchDetails, PlayerOverview } from "../types/riot";
+import { useAuth } from "../contexts/AuthContext";
 import MatchDetailTable from "../components/MatchDetailTable";
 import RefreshButton from "../components/RefreshButton";
 import BackButton from "../components/BackButton";
@@ -13,14 +14,13 @@ import {
 
 const formatDurationMin = (s: number) => `${Math.round(s / 60)}m`;
 
-const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
-
 const MatchPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [data, setData] = useState<MatchDetails | null>(null);
   const [userProfile, setUserProfile] = useState<PlayerOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!matchId) {
@@ -29,12 +29,18 @@ const MatchPage: React.FC = () => {
       return;
     }
 
+    if (!user) {
+      setError("User not authenticated");
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const profileRes = await fetchOverview(
-          DEFAULT_USER.name,
-          DEFAULT_USER.region,
-          DEFAULT_USER.tag,
+          user.name,
+          user.region,
+          user.tag,
         );
         setUserProfile(profileRes);
         
@@ -46,7 +52,7 @@ const MatchPage: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, [matchId]);
+  }, [matchId, user]);
 
   if (loading) return <LoadingSpinner />;
 

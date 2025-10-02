@@ -109,7 +109,7 @@ export type MatchDetails = {
   queue_id: number;
   game_creation_ms: number;
   game_duration_s: number;
-  participants: MatchParticipantDetail[];
+  participants: MatchParticipant[];
   user_puuid: string;
   ddragon_version: string;
 };

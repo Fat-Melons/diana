@@ -1,27 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { fetchOverview, fetchDailyActivity } from "../lib/api";
 import type { PlayerOverview, DailyActivityEntry } from "../types/riot";
+import { useAuth } from "../contexts/AuthContext";
 import ProfileCard from "../components/ProfileCard";
 import MatchList from "../components/MatchList";
 import TopChamps from "../components/TopChamps";
 import ActivityGraph from "../components/ActivityGraph";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-const DEFAULT_USER = { name: "FM Stew", region: "EUW", tag: "RATS" };
-
 const Home: React.FC = () => {
   const [data, setData] = useState<PlayerOverview | null>(null);
   const [activityData, setActivityData] = useState<DailyActivityEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
+    
     (async () => {
       try {
         const res = await fetchOverview(
-          DEFAULT_USER.name,
-          DEFAULT_USER.region,
-          DEFAULT_USER.tag,
+          user.name,
+          user.region,
+          user.tag,
         );
         setData(res);
         try {
@@ -36,7 +38,7 @@ const Home: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user]);
 
   if (loading) return <LoadingSpinner />;
   if (error)
@@ -47,7 +49,7 @@ const Home: React.FC = () => {
     );
   if (!data) return null;
 
-  const { profile, matches, stats, top_champs, ranked_progress } = data;
+  const { profile, matches, stats, top_champs } = data;
 
   return (
     <>

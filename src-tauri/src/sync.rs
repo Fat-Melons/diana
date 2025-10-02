@@ -53,7 +53,8 @@ pub async fn sync_player_and_get_overview(
         if Some(&latest_riot) != latest_in_db.as_ref() {
             let mut start = 0u32;
             let batch = 20u32;
-            let max_to_fetch = 200u32;
+            // For new users or initial sync, only fetch 10 recent matches to avoid API rate limits
+            let max_to_fetch = if latest_in_db.is_none() { 10u32 } else { 50u32 };
             let mut fetched = 0u32;
 
             'outer: loop {
@@ -68,7 +69,9 @@ pub async fn sync_player_and_get_overview(
                     if Some(&mid) == latest_in_db.as_ref() {
                         break 'outer;
                     }
-                    insert_full_match(&client, pool, api_key, regional, &acct.puuid, &mid).await?;
+                    // For new users, skip timeline to speed up initial sync
+                    let skip_timeline = latest_in_db.is_none();
+                    insert_match_with_options(&client, pool, api_key, regional, &acct.puuid, &mid, skip_timeline).await?;
                     fetched += 1;
                     if fetched >= max_to_fetch {
                         break 'outer;
@@ -145,13 +148,14 @@ pub async fn sync_player_and_get_overview(
     })
 }
 
-async fn insert_full_match(
+async fn insert_match_with_options(
     client: &Client,
     pool: &PgPool,
     api_key: &str,
     regional: &str,
     entry_puuid: &str,
     match_id: &str,
+    skip_timeline: bool,
 ) -> Result<()> {
     if db::match_exists(pool, match_id).await? {
         println!("[DB] Match {} already exists, skipping insert.", match_id);
@@ -159,7 +163,13 @@ async fn insert_full_match(
     }
 
     let m: MatchDto = crate::riot::get_match_by_id(client, api_key, regional, match_id).await?;
-    let timeline = crate::riot::get_timeline_by_id(client, api_key, regional, match_id).await?;
+    
+    let timeline = if skip_timeline {
+        println!("[SYNC] Skipping timeline for match {} to speed up initial sync", match_id);
+        serde_json::Value::Null
+    } else {
+        crate::riot::get_timeline_by_id(client, api_key, regional, match_id).await?
+    };
 
     let participants_json = serde_json::to_value(&m.info.participants)?;
     let teams_json = json!({ "queueId": m.info.queueId });
@@ -184,38 +194,52 @@ async fn insert_full_match(
     )
     .await?;
 
-    if let Some(frames) = timeline
-        .get("info")
-        .and_then(|i| i.get("frames"))
-        .and_then(|f| f.as_array())
-    {
-        for (idx, frame) in frames.iter().enumerate() {
-            if db::timeline_frame_exists_tx(&mut tx, mid, idx as i32).await? {
-                println!(
-                    "[DB] Timeline frame {} for match {} exists, skipping.",
-                    idx, match_id
-                );
-                continue;
+    // Only process timeline if not skipped
+    if !skip_timeline {
+        if let Some(frames) = timeline
+            .get("info")
+            .and_then(|i| i.get("frames"))
+            .and_then(|f| f.as_array())
+        {
+            for (idx, frame) in frames.iter().enumerate() {
+                if db::timeline_frame_exists_tx(&mut tx, mid, idx as i32).await? {
+                    println!(
+                        "[DB] Timeline frame {} for match {} exists, skipping.",
+                        idx, match_id
+                    );
+                    continue;
+                }
+
+                let ts = frame.get("timestamp").and_then(|t| t.as_i64());
+                let participant_frames =
+                    frame.get("participantFrames").cloned().unwrap_or_else(|| json!({}));
+                let events = frame.get("events").cloned().unwrap_or_else(|| json!([]));
+
+                db::insert_timeline_frame_tx(
+                    &mut tx,
+                    mid,
+                    entry_puuid,
+                    Some(idx as i32),
+                    ts,
+                    &participant_frames,
+                    &events,
+                )
+                .await?;
             }
-
-            let ts = frame.get("timestamp").and_then(|t| t.as_i64());
-            let participant_frames =
-                frame.get("participantFrames").cloned().unwrap_or_else(|| json!({}));
-            let events = frame.get("events").cloned().unwrap_or_else(|| json!([]));
-
-            db::insert_timeline_frame_tx(
-                &mut tx,
-                mid,
-                entry_puuid,
-                Some(idx as i32),
-                ts,
-                &participant_frames,
-                &events,
-            )
-            .await?;
         }
     }
 
     tx.commit().await?;
     Ok(())
+}
+
+async fn insert_full_match(
+    client: &Client,
+    pool: &PgPool,
+    api_key: &str,
+    regional: &str,
+    entry_puuid: &str,
+    match_id: &str,
+) -> Result<()> {
+    insert_match_with_options(client, pool, api_key, regional, entry_puuid, match_id, false).await
 }
