@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde_json::json;
+use std::collections::HashSet;
 
 use crate::{
     db_proxy as db,
@@ -17,7 +18,7 @@ pub async fn sync_player_and_get_overview(
     query_region: &str,
     name: &str,
     tag: &str,
-    api_key: &str,
+    _api_key: &str,
 ) -> Result<PlayerOverview> {
     eprintln!("[SYNC] Starting sync for player: {}#{} in region {}", name, tag, query_region);
     let (platform, regional) =
@@ -44,42 +45,63 @@ pub async fn sync_player_and_get_overview(
     )
     .await?;
 
-    let latest_in_db = db::latest_match_for_puuid(pool, &acct.puuid).await?;
-    let latest_from_riot = riot::get_match_ids(&client, regional, &acct.puuid, 0, 1)
-        .await?
-        .get(0)
-        .cloned();
-
-    if let Some(latest_riot) = latest_from_riot {
-        if Some(&latest_riot) != latest_in_db.as_ref() {
-            let mut start = 0u32;
-            let batch = 20u32;
-            let max_to_fetch = if latest_in_db.is_none() { 10u32 } else { 50u32 };
-            let mut fetched = 0u32;
-
-            'outer: loop {
-                let ids =
-                    riot::get_match_ids(&client, regional, &acct.puuid, start, batch)
-                        .await?;
-                if ids.is_empty() {
-                    break;
-                }
-
-                for mid in ids {
-                    if Some(&mid) == latest_in_db.as_ref() {
-                        break 'outer;
-                    }
-                    let skip_timeline = latest_in_db.is_none();
-                    insert_match_with_options(&client, pool, regional, &acct.puuid, &mid, skip_timeline).await?;
-                    fetched += 1;
-                    if fetched >= max_to_fetch {
-                        break 'outer;
-                    }
-                }
-
-                start += batch;
+    // Always ensure we have the 10 most recent matches for this user
+    eprintln!("[SYNC] Fetching 10 most recent match IDs from Riot API...");
+    let fresh_ids = riot::get_match_ids(&client, regional, &acct.puuid, 0, 10).await?;
+    eprintln!("[SYNC] Retrieved {} fresh match IDs from Riot API", fresh_ids.len());
+    
+    if !fresh_ids.is_empty() {
+        // Check which of these 10 matches we already have in the database
+        let mut existing_ids = HashSet::new();
+        for match_id in &fresh_ids {
+            if db::match_exists(pool, match_id).await? {
+                existing_ids.insert(match_id.clone());
             }
         }
+        
+        eprintln!("[SYNC] Found {} existing matches out of {} fresh matches", existing_ids.len(), fresh_ids.len());
+        
+        // Determine which matches we need to fetch
+        let mut missing_ids = Vec::new();
+        for match_id in &fresh_ids {
+            if !existing_ids.contains(match_id) {
+                missing_ids.push(match_id.clone());
+            }
+        }
+        
+        eprintln!("[SYNC] Need to fetch {} missing matches: {:?}", missing_ids.len(), missing_ids);
+        
+        // For new users (no existing matches), we need to balance speed vs completeness
+        let is_new_user = existing_ids.is_empty();
+        let skip_timeline = is_new_user;
+        
+        if is_new_user && missing_ids.len() > 3 {
+            eprintln!("[SYNC] New user with {} matches - fetching first 3 immediately, rest will be fetched in background", missing_ids.len());
+            
+            // Fetch only the first 3 matches immediately to avoid timeout
+            let immediate_matches = missing_ids.iter().take(3).cloned().collect::<Vec<_>>();
+            for (idx, match_id) in immediate_matches.iter().enumerate() {
+                eprintln!("[SYNC] Fetching immediate match {}/{}: {}", idx + 1, immediate_matches.len(), match_id);
+                insert_match_with_options(&client, pool, regional, &acct.puuid, match_id, skip_timeline).await?;
+            }
+            
+            eprintln!("[SYNC] Will fetch remaining {} matches in background later", missing_ids.len() - 3);
+            // Note: The remaining matches will be fetched on subsequent logins
+        } else {
+            // Existing user or small number of missing matches - fetch all
+            if skip_timeline {
+                eprintln!("[SYNC] New user with {} matches - will skip timelines for faster sync", missing_ids.len());
+            }
+            
+            for (idx, match_id) in missing_ids.iter().enumerate() {
+                eprintln!("[SYNC] Fetching match {}/{}: {}", idx + 1, missing_ids.len(), match_id);
+                insert_match_with_options(&client, pool, regional, &acct.puuid, match_id, skip_timeline).await?;
+            }
+        }
+        
+        eprintln!("[SYNC] Sync complete - fetched new matches as needed");
+    } else {
+        eprintln!("[SYNC] ⚠️  No matches found for user from Riot API");
     }
 
     let ddragon_version = riot::get_latest_ddragon_version(&client).await?;
@@ -188,9 +210,10 @@ async fn insert_match_with_options(
     let m: MatchDto = crate::riot::get_match_by_id(client, regional, match_id).await?;
     
     let timeline = if skip_timeline {
-        println!("[SYNC] Skipping timeline for match {} to speed up initial sync", match_id);
+        println!("[SYNC] Skipping timeline fetch for match {} to speed up initial sync", match_id);
         serde_json::Value::Null
     } else {
+        println!("[SYNC] Fetching timeline for match {}", match_id);
         crate::riot::get_timeline_by_id(client, regional, match_id).await?
     };
 
@@ -256,13 +279,3 @@ async fn insert_match_with_options(
     Ok(())
 }
 
-async fn insert_full_match(
-    client: &Client,
-    pool: &PgPool,
-    api_key: &str,
-    regional: &str,
-    entry_puuid: &str,
-    match_id: &str,
-) -> Result<()> {
-    insert_match_with_options(client, pool, regional, entry_puuid, match_id, false).await
-}

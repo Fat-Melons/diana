@@ -5,7 +5,7 @@ use serde_json::json;
 use serde_json::Value;
 use std::env;
 
-use crate::models::{DbMatchRow, DbSummoner, RankStep};
+use crate::models::{DbMatchRow, DbMatchRowJson, DbSummoner, RankStep};
 
 /// Get the proxy base URL from runtime environment variable or compile-time default
 pub fn proxy_base_url() -> String {
@@ -143,7 +143,8 @@ pub async fn latest_match_for_puuid(pool: &ProxyPool, puuid: &str) -> Result<Opt
         return Ok(None);
     }
     
-    let match_row: DbMatchRow = serde_json::from_str(&text)?;
+    let match_row_json: DbMatchRowJson = serde_json::from_str(&text)?;
+    let match_row: DbMatchRow = match_row_json.into();
     Ok(Some(match_row.matchId))
 }
 
@@ -164,8 +165,10 @@ pub async fn get_recent_matches(pool: &ProxyPool, puuid: &str, limit: i64) -> Re
     eprintln!("[DB_PROXY] 📄 Response body (first 200 chars): {}", 
               text.chars().take(200).collect::<String>());
     
-    let matches: Vec<DbMatchRow> = serde_json::from_str(&text)
+    let matches_json: Vec<DbMatchRowJson> = serde_json::from_str(&text)
         .map_err(|e| anyhow!("Failed to parse matches JSON: {} - Response was: {}", e, text))?;
+    
+    let matches: Vec<DbMatchRow> = matches_json.into_iter().map(|m| m.into()).collect();
     
     eprintln!("[DB_PROXY] ✅ Parsed {} matches successfully", matches.len());
     if !matches.is_empty() {
@@ -221,13 +224,22 @@ pub async fn insert_match_details_tx(
         return Err(anyhow!("Database proxy error: {}", error_text));
     }
     
+    let response_text = response.text().await?;
+    eprintln!("[DB_PROXY] 📄 Insert response body: {}", response_text);
+    
     #[derive(Deserialize)]
     struct InsertResponse {
-        mid: Option<i64>,
+        mid: Option<serde_json::Value>,
     }
     
-    let result: InsertResponse = response.json().await?;
-    let mid = result.mid.unwrap_or(0);
+    let result: InsertResponse = serde_json::from_str(&response_text)
+        .map_err(|e| anyhow!("Failed to parse insert response JSON: {} - Response was: {}", e, response_text))?;
+    
+    let mid = match result.mid {
+        Some(serde_json::Value::Number(n)) => n.as_i64().unwrap_or(0),
+        Some(serde_json::Value::String(s)) => s.parse::<i64>().unwrap_or(0),
+        _ => 0,
+    };
     
     if mid == 0 {
         eprintln!("[DB_PROXY] ❌ Match insertion returned mid=0 for match {}, this indicates a database issue", match_id);
@@ -274,13 +286,24 @@ pub async fn insert_timeline_frame_tx(
         return Err(anyhow!("Database proxy error for timeline frame: {}", error_text));
     }
     
+    let response_text = response.text().await?;
+    eprintln!("[DB_PROXY] 📄 Timeline insert response body: {}", response_text);
+    
     #[derive(Deserialize)]
     struct InsertResponse {
-        tid: Option<i64>,
+        tid: Option<serde_json::Value>,
     }
     
-    let result: InsertResponse = response.json().await?;
-    Ok(result.tid.unwrap_or(0))
+    let result: InsertResponse = serde_json::from_str(&response_text)
+        .map_err(|e| anyhow!("Failed to parse timeline insert response JSON: {} - Response was: {}", e, response_text))?;
+    
+    let tid = match result.tid {
+        Some(serde_json::Value::Number(n)) => n.as_i64().unwrap_or(0),
+        Some(serde_json::Value::String(s)) => s.parse::<i64>().unwrap_or(0),
+        _ => 0,
+    };
+    
+    Ok(tid)
 }
 
 pub async fn timeline_frame_exists_tx(

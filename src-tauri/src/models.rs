@@ -154,12 +154,51 @@ pub struct DbSummoner {
     pub lastMissingDataNotification: DateTime<Utc>,
 }
 
-#[derive(sqlx::FromRow, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(sqlx::FromRow, Debug, serde::Serialize)]
 pub struct DbMatchRow {
     pub mid: i64,
     pub matchId: String,
     pub entryPlayerPuuid: String,
     pub gameCreation: i64,
+}
+
+// Separate struct for JSON deserialization that can handle string/numeric IDs
+#[derive(Debug, serde::Deserialize)]
+pub struct DbMatchRowJson {
+    #[serde(deserialize_with = "deserialize_flexible_i64")]
+    pub mid: i64,
+    pub matchId: String,
+    pub entryPlayerPuuid: String,
+    #[serde(deserialize_with = "deserialize_flexible_i64")]
+    pub gameCreation: i64,
+}
+
+// Convert from JSON struct to main struct
+impl From<DbMatchRowJson> for DbMatchRow {
+    fn from(json: DbMatchRowJson) -> Self {
+        Self {
+            mid: json.mid,
+            matchId: json.matchId,
+            entryPlayerPuuid: json.entryPlayerPuuid,
+            gameCreation: json.gameCreation,
+        }
+    }
+}
+
+// Flexible deserializer for i64 that accepts both string and number
+fn deserialize_flexible_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+    use serde_json::Value;
+    
+    let value = Value::deserialize(deserializer)?;
+    match value {
+        Value::Number(n) => n.as_i64().ok_or_else(|| D::Error::custom("invalid number")),
+        Value::String(s) => s.parse::<i64>().map_err(D::Error::custom),
+        _ => Err(D::Error::custom("expected string or number")),
+    }
 }
 
 #[derive(Serialize, Debug)]

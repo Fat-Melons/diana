@@ -168,10 +168,23 @@
 * {
   box-sizing: border-box;
 }
+
+html {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  min-height: 100%;
+}
+
+#root {
+  background: var(--bg-gradient);
+  min-height: 100vh;
+}
+
 body {
   margin: 0;
   color: var(--text);
   background: var(--bg-gradient);
+  min-height: 100vh;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -841,9 +854,6 @@ a:active,
 }
 
 .refresh-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
   width: 44px;
   height: 44px;
   background: var(--surface-2);
@@ -858,7 +868,6 @@ a:active,
     border-color 0.2s ease,
     transform 0.1s ease,
     box-shadow 0.2s ease;
-  z-index: 1000;
   color: var(--muted);
   box-shadow: var(--shadow-1);
 }
@@ -891,9 +900,6 @@ a:active,
 }
 
 .back-button {
-  position: fixed;
-  top: 20px;
-  right: 76px;
   width: 44px;
   height: 44px;
   background: var(--surface-2);
@@ -908,7 +914,6 @@ a:active,
     border-color 0.2s ease,
     transform 0.1s ease,
     box-shadow 0.2s ease;
-  z-index: 1000;
   color: var(--muted);
   box-shadow: var(--shadow-1);
 }
@@ -974,8 +979,6 @@ a:active,
 
 @media (max-width: 768px) {
   .refresh-button {
-    top: 16px;
-    right: 16px;
     width: 40px;
     height: 40px;
   }
@@ -986,8 +989,6 @@ a:active,
   }
 
   .back-button {
-    top: 16px;
-    right: 68px;
     width: 40px;
     height: 40px;
   }
@@ -1160,6 +1161,20 @@ a:active,
   justify-content: center;
   background: var(--bg-gradient);
   animation: loginFadeIn 0.8s ease-out;
+}
+
+.login-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.login-refresh {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
 }
 
 .login-card {
@@ -1403,6 +1418,8 @@ a:active,
 .app-layout {
   position: relative;
   min-height: 100vh;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
 }
 
 .burger-menu-container {
@@ -1410,6 +1427,9 @@ a:active,
   top: 20px;
   left: 20px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .burger-button {
@@ -1553,9 +1573,25 @@ a:active,
     max-width: none;
   }
 
+  .login-refresh {
+    top: 16px;
+    left: 16px;
+  }
+
+  .login-refresh .refresh-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .login-refresh .refresh-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .burger-menu-container {
     top: 16px;
     left: 16px;
+    gap: 8px;
   }
 
   .burger-button {
@@ -1571,4 +1607,5 @@ a:active,
   .burger-dropdown {
     min-width: 180px;
   }
+
 }

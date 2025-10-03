@@ -4,8 +4,6 @@ import { fetchMatchDetails, fetchOverview } from "../lib/api";
 import type { MatchDetails, PlayerOverview } from "../types/riot";
 import { useAuth } from "../contexts/AuthContext";
 import MatchDetailTable from "../components/MatchDetailTable";
-import RefreshButton from "../components/RefreshButton";
-import BackButton from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { queueName, timeAgo } from "../utils/format";
 
@@ -66,30 +64,26 @@ const MatchPage: React.FC = () => {
   if (!data || !userProfile) return null;
 
   return (
-    <>
-      <BackButton />
-      <RefreshButton />
-      <div className="container">
-        <div className="match-details">
-          <div className="match-header fancy-card">
-            <div className="card-head">
-              <h2 className="card-title">
-                Match Details - {queueName(data.queue_id)}
-              </h2>
-              <div className="badge">
-                {timeAgo(data.game_creation_ms)} •{" "}
-                {formatDurationMin(data.game_duration_s)}
-              </div>
+    <div className="container">
+      <div className="match-details">
+        <div className="match-header fancy-card">
+          <div className="card-head">
+            <h2 className="card-title">
+              Match Details - {queueName(data.queue_id)}
+            </h2>
+            <div className="badge">
+              {timeAgo(data.game_creation_ms)} •{" "}
+              {formatDurationMin(data.game_duration_s)}
             </div>
           </div>
-
-          <MatchDetailTable
-            match={data}
-            userPuuid={userProfile.profile.puuid}
-          />
         </div>
+
+        <MatchDetailTable
+          match={data}
+          userPuuid={userProfile.profile.puuid}
+        />
       </div>
-    </>
+    </div>
   );
 };
 

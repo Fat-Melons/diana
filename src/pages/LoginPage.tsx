@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
+import RefreshButton from "../components/RefreshButton";
 
 const REGIONS = [
   { code: "EUW", name: "EUW" },
@@ -100,7 +101,8 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="login-container">
-      <div className="login-card">
+      <div className="login-content">
+        <div className="login-card">
         <h1 className="login-title">Diana</h1>
         <p className="login-subtitle">League of Legends Stats Tracker</p>
 
@@ -142,6 +144,11 @@ const LoginPage: React.FC = () => {
             {isLoading ? "Loading..." : "Select Player"}
           </button>
         </form>
+        </div>
+      </div>
+      
+      <div className="login-refresh">
+        <RefreshButton />
       </div>
 
       {error && (

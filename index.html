@@ -1,12 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background: hsl(198 50% 7%); margin: 0; padding: 0;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diana</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: radial-gradient(1100px 520px at 20% -10%, hsl(270 100% 70% / 0.1), transparent 60%), radial-gradient(900px 480px at 95% 0%, hsl(190 90% 60% / 0.1), transparent 70%), linear-gradient(180deg, hsl(199 48% 8%), hsl(198 48% 6%));
+        background-attachment: fixed;
+        min-height: 100%;
+      }
+      #root {
+        background: radial-gradient(1100px 520px at 20% -10%, hsl(270 100% 70% / 0.1), transparent 60%), radial-gradient(900px 480px at 95% 0%, hsl(190 90% 60% / 0.1), transparent 70%), linear-gradient(180deg, hsl(199 48% 8%), hsl(198 48% 6%));
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+    </style>
   </head>
 
-  <body data-theme="abyss-teal">
+  <body data-theme="abyss-teal" style="margin: 0; padding: 0; background: radial-gradient(1100px 520px at 20% -10%, hsl(270 100% 70% / 0.1), transparent 60%), radial-gradient(900px 480px at 95% 0%, hsl(190 90% 60% / 0.1), transparent 70%), linear-gradient(180deg, hsl(199 48% 8%), hsl(198 48% 6%)); background-attachment: fixed; min-height: 100vh;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
