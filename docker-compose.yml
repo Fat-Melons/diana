@@ -9,7 +9,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - RIOT_API_KEY=${RIOT_API_KEY:-RGAPI-6e48c9ef-3cff-4406-82f7-64bbb7724d01}
+      - RIOT_API_KEY=${RIOT_API_KEY:API_KEY}
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:admin@postgres:5432/diana}
     restart: unless-stopped
     healthcheck:
