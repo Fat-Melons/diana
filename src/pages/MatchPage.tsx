@@ -78,10 +78,7 @@ const MatchPage: React.FC = () => {
           </div>
         </div>
 
-        <MatchDetailTable
-          match={data}
-          userPuuid={userProfile.profile.puuid}
-        />
+        <MatchDetailTable match={data} userPuuid={userProfile.profile.puuid} />
       </div>
     </div>
   );

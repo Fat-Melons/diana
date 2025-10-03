@@ -103,50 +103,50 @@ const LoginPage: React.FC = () => {
     <div className="login-container">
       <div className="login-content">
         <div className="login-card">
-        <h1 className="login-title">Diana</h1>
-        <p className="login-subtitle">League of Legends Stats Tracker</p>
+          <h1 className="login-title">Diana</h1>
+          <p className="login-subtitle">League of Legends Stats Tracker</p>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="login-inputs">
-            <div className="summoner-inputs">
-              <input
-                type="text"
-                placeholder="Summoner Name"
-                value={summoner}
-                onChange={(e) => setSummoner(e.target.value)}
-                className="login-input login-input-left"
-                required
-              />
-              <input
-                type="text"
-                placeholder="#"
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-                className="login-input login-input-right"
-                required
-              />
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-inputs">
+              <div className="summoner-inputs">
+                <input
+                  type="text"
+                  placeholder="Summoner Name"
+                  value={summoner}
+                  onChange={(e) => setSummoner(e.target.value)}
+                  className="login-input login-input-left"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="#"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  className="login-input login-input-right"
+                  required
+                />
+              </div>
+
+              <select
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className="login-select"
+              >
+                {REGIONS.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="login-select"
-            >
-              {REGIONS.map((r) => (
-                <option key={r.code} value={r.code}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button type="submit" className="login-submit" disabled={isLoading}>
-            {isLoading ? "Loading..." : "Select Player"}
-          </button>
-        </form>
+            <button type="submit" className="login-submit" disabled={isLoading}>
+              {isLoading ? "Loading..." : "Select Player"}
+            </button>
+          </form>
         </div>
       </div>
-      
+
       <div className="login-refresh">
         <RefreshButton />
       </div>

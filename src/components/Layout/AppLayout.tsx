@@ -15,7 +15,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
 
   // Show back button on all pages except home (/)
-  const showBackButton = location.pathname !== '/';
+  const showBackButton = location.pathname !== "/";
 
   const handleSignOut = () => {
     logout();

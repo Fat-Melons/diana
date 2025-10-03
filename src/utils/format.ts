@@ -35,17 +35,17 @@ export function formatKDA(k: number, d: number, a: number): string {
 }
 
 // Import all ranked emblem assets
-import ironEmblem from '../assets/ranked-emblem/iron.webp';
-import bronzeEmblem from '../assets/ranked-emblem/bronze.webp';
-import silverEmblem from '../assets/ranked-emblem/silver.webp';
-import goldEmblem from '../assets/ranked-emblem/gold.webp';
-import platinumEmblem from '../assets/ranked-emblem/platinum.webp';
-import emeraldEmblem from '../assets/ranked-emblem/emerald.webp';
-import diamondEmblem from '../assets/ranked-emblem/diamond.webp';
-import masterEmblem from '../assets/ranked-emblem/master.webp';
-import grandmasterEmblem from '../assets/ranked-emblem/grandmaster.webp';
-import challengerEmblem from '../assets/ranked-emblem/challenger.webp';
-import unrankedEmblem from '../assets/ranked-emblem/unranked.webp';
+import ironEmblem from "../assets/ranked-emblem/iron.webp";
+import bronzeEmblem from "../assets/ranked-emblem/bronze.webp";
+import silverEmblem from "../assets/ranked-emblem/silver.webp";
+import goldEmblem from "../assets/ranked-emblem/gold.webp";
+import platinumEmblem from "../assets/ranked-emblem/platinum.webp";
+import emeraldEmblem from "../assets/ranked-emblem/emerald.webp";
+import diamondEmblem from "../assets/ranked-emblem/diamond.webp";
+import masterEmblem from "../assets/ranked-emblem/master.webp";
+import grandmasterEmblem from "../assets/ranked-emblem/grandmaster.webp";
+import challengerEmblem from "../assets/ranked-emblem/challenger.webp";
+import unrankedEmblem from "../assets/ranked-emblem/unranked.webp";
 
 // Create emblem mapping
 const rankEmblems: Record<string, string> = {
