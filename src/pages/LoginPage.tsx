@@ -24,14 +24,14 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorToast, setShowErrorToast] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const showError = (message: string) => {
     setError(message);
     setShowErrorToast(true);
-    
+
     setTimeout(() => {
       setShowErrorToast(false);
       setTimeout(() => setError(null), 300);
@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setShowErrorToast(false);
-    
+
     if (!summoner.trim() || !tag.trim()) {
       showError("Summoner name and tag are required");
       return;
@@ -63,15 +63,28 @@ const LoginPage: React.FC = () => {
       navigate("/");
     } catch (error: any) {
       console.error("Login failed:", error);
-      const errorMessage = error?.message || "Failed to find summoner. Please check your details and try again.";
-      
+      const errorMessage =
+        error?.message ||
+        "Failed to find summoner. Please check your details and try again.";
+
       if (errorMessage.includes("404") || errorMessage.includes("not found")) {
-        showError("Summoner not found. Please check your summoner name and tag.");
-      } else if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
+        showError(
+          "Summoner not found. Please check your summoner name and tag.",
+        );
+      } else if (
+        errorMessage.includes("403") ||
+        errorMessage.includes("Forbidden")
+      ) {
         showError("API access denied. Please try again later.");
-      } else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
+      } else if (
+        errorMessage.includes("429") ||
+        errorMessage.includes("rate limit")
+      ) {
         showError("Too many requests. Please wait a moment and try again.");
-      } else if (errorMessage.includes("500") || errorMessage.includes("Internal Server Error")) {
+      } else if (
+        errorMessage.includes("500") ||
+        errorMessage.includes("Internal Server Error")
+      ) {
         showError("Server error. Please try again in a few minutes.");
       } else {
         showError(errorMessage);
@@ -90,7 +103,7 @@ const LoginPage: React.FC = () => {
       <div className="login-card">
         <h1 className="login-title">Diana</h1>
         <p className="login-subtitle">League of Legends Stats Tracker</p>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-inputs">
             <div className="summoner-inputs">
@@ -111,7 +124,7 @@ const LoginPage: React.FC = () => {
                 required
               />
             </div>
-            
+
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
@@ -130,9 +143,9 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
       </div>
-      
+
       {error && (
-        <div className={`error-toast ${showErrorToast ? 'show' : ''}`}>
+        <div className={`error-toast ${showErrorToast ? "show" : ""}`}>
           <div className="error-toast-content">
             <div className="error-toast-icon">⚠</div>
             <div className="error-toast-message">{error}</div>

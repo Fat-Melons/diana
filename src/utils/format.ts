@@ -34,10 +34,38 @@ export function formatKDA(k: number, d: number, a: number): string {
   return `${k}/${d}/${a}`;
 }
 
+// Import all ranked emblem assets
+import ironEmblem from '../assets/ranked-emblem/iron.webp';
+import bronzeEmblem from '../assets/ranked-emblem/bronze.webp';
+import silverEmblem from '../assets/ranked-emblem/silver.webp';
+import goldEmblem from '../assets/ranked-emblem/gold.webp';
+import platinumEmblem from '../assets/ranked-emblem/platinum.webp';
+import emeraldEmblem from '../assets/ranked-emblem/emerald.webp';
+import diamondEmblem from '../assets/ranked-emblem/diamond.webp';
+import masterEmblem from '../assets/ranked-emblem/master.webp';
+import grandmasterEmblem from '../assets/ranked-emblem/grandmaster.webp';
+import challengerEmblem from '../assets/ranked-emblem/challenger.webp';
+import unrankedEmblem from '../assets/ranked-emblem/unranked.webp';
+
+// Create emblem mapping
+const rankEmblems: Record<string, string> = {
+  iron: ironEmblem,
+  bronze: bronzeEmblem,
+  silver: silverEmblem,
+  gold: goldEmblem,
+  platinum: platinumEmblem,
+  emerald: emeraldEmblem,
+  diamond: diamondEmblem,
+  master: masterEmblem,
+  grandmaster: grandmasterEmblem,
+  challenger: challengerEmblem,
+  unranked: unrankedEmblem,
+};
+
 export function rankEmblemFromTier(tier?: string | null): string | null {
   if (!tier) return null;
   const key = tier.toLowerCase();
-  return `/src/assets/ranked-emblem/${key}.webp`;
+  return rankEmblems[key] || null;
 }
 
 export function getRoleNameTranslation(role: string): string {
@@ -51,11 +79,14 @@ export function getRoleNameTranslation(role: string): string {
   return roleMap.get(role?.toUpperCase?.() ?? "") || "Unknown";
 }
 
-export async function getItemName(id: number, version: string): Promise<string> {
+export async function getItemName(
+  id: number,
+  version: string,
+): Promise<string> {
   try {
     if (!cachedItems || cachedVersion !== version) {
       const res = await fetch(
-        `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/item.json`
+        `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/item.json`,
       );
       if (!res.ok) throw new Error("Failed to fetch item data");
       const data = await res.json();
@@ -80,32 +111,33 @@ export const numK = (n: number) => {
 
 export const killPartPercentage = (p: number) => `${Math.round(p * 100)}%`;
 
-export const roleIsSupport = (role: string) => role?.toUpperCase() === "UTILITY";
+export const roleIsSupport = (role: string) =>
+  role?.toUpperCase() === "UTILITY";
 
 export const formatDurationMin = (s: number) => `${Math.round(s / 60)}m`;
 
 export const getBaseSummonerName = (name: string) => {
-  const hashIndex = name.indexOf('#');
+  const hashIndex = name.indexOf("#");
   return hashIndex !== -1 ? name.substring(0, hashIndex) : name;
 };
 
 export const TIERS = [
-  'IRON',
-  'BRONZE', 
-  'SILVER',
-  'GOLD',
-  'PLATINUM',
-  'EMERALD',
-  'DIAMOND',
-  'MASTER',
-  'GRANDMASTER',
-  'CHALLENGER'
+  "IRON",
+  "BRONZE",
+  "SILVER",
+  "GOLD",
+  "PLATINUM",
+  "EMERALD",
+  "DIAMOND",
+  "MASTER",
+  "GRANDMASTER",
+  "CHALLENGER",
 ] as const;
 
-export const DIVISIONS = ['IV', 'III', 'II', 'I'] as const;
+export const DIVISIONS = ["IV", "III", "II", "I"] as const;
 
-export type Tier = typeof TIERS[number];
-export type Division = typeof DIVISIONS[number];
+export type Tier = (typeof TIERS)[number];
+export type Division = (typeof DIVISIONS)[number];
 
 export function getTierOrder(tier: string): number {
   const index = TIERS.indexOf(tier.toUpperCase() as Tier);
@@ -117,32 +149,40 @@ export function getDivisionOrder(division: string): number {
   return index === -1 ? 0 : index;
 }
 
-export function rankToTotalLP(tier: string, division: string, lp: number): number {
+export function rankToTotalLP(
+  tier: string,
+  division: string,
+  lp: number,
+): number {
   const tierOrder = getTierOrder(tier);
   const divisionOrder = getDivisionOrder(division);
 
   const tierLP = tierOrder * 400;
   const divisionLP = divisionOrder * 100;
-  
+
   return tierLP + divisionLP + lp;
 }
 
-export function totalLPToRank(totalLP: number): { tier: string; division: string; lp: number } {
+export function totalLPToRank(totalLP: number): {
+  tier: string;
+  division: string;
+  lp: number;
+} {
   if (totalLP < 0) totalLP = 0;
-  
+
   const tierIndex = Math.floor(totalLP / 400);
   const remainingLP = totalLP % 400;
   const divisionIndex = Math.floor(remainingLP / 100);
   const lp = remainingLP % 100;
-  
+
   const tier = TIERS[Math.min(tierIndex, TIERS.length - 1)];
   const division = DIVISIONS[Math.min(divisionIndex, DIVISIONS.length - 1)];
-  
+
   return { tier, division, lp };
 }
 
 export function formatRank(tier: string, division: string): string {
-  if (['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(tier.toUpperCase())) {
+  if (["MASTER", "GRANDMASTER", "CHALLENGER"].includes(tier.toUpperCase())) {
     return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
   }
   return `${tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()} ${division}`;

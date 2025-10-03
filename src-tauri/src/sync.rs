@@ -3,8 +3,8 @@ use reqwest::Client;
 use serde_json::json;
 
 use crate::{
-    db,
-    db::{PgPool, PgTx},
+    db_proxy as db,
+    db_proxy::{PgPool, PgTx},
     models::{
         AccountDto, MatchDto, PlayerOverview, PlayerProfile, PlayerStats, SummonerDto, TopChamp,
         RankStep,
@@ -19,17 +19,18 @@ pub async fn sync_player_and_get_overview(
     tag: &str,
     api_key: &str,
 ) -> Result<PlayerOverview> {
+    eprintln!("[SYNC] Starting sync for player: {}#{} in region {}", name, tag, query_region);
     let (platform, regional) =
         riot::map_region(query_region).ok_or_else(|| anyhow!("Unsupported region: {}", query_region))?;
 
     let client = Client::builder().user_agent("Diana/0.1.0").build()?;
 
     let acct: AccountDto =
-        riot::get_account_by_riot_id(&client, api_key, regional, name, tag).await?;
+        riot::get_account_by_riot_id(&client, regional, name, tag).await?;
     let sum: SummonerDto =
-        riot::get_summoner_by_puuid(&client, api_key, platform, &acct.puuid).await?;
+        riot::get_summoner_by_puuid(&client, platform, &acct.puuid).await?;
     let (tier, division, lp) =
-        riot::get_rank_solo(&client, api_key, platform, &acct.puuid).await?;
+        riot::get_rank_solo(&client, platform, &acct.puuid).await?;
 
     db::upsert_summoner(
         pool,
@@ -44,7 +45,7 @@ pub async fn sync_player_and_get_overview(
     .await?;
 
     let latest_in_db = db::latest_match_for_puuid(pool, &acct.puuid).await?;
-    let latest_from_riot = riot::get_match_ids(&client, api_key, regional, &acct.puuid, 0, 1)
+    let latest_from_riot = riot::get_match_ids(&client, regional, &acct.puuid, 0, 1)
         .await?
         .get(0)
         .cloned();
@@ -53,13 +54,12 @@ pub async fn sync_player_and_get_overview(
         if Some(&latest_riot) != latest_in_db.as_ref() {
             let mut start = 0u32;
             let batch = 20u32;
-            // For new users or initial sync, only fetch 10 recent matches to avoid API rate limits
             let max_to_fetch = if latest_in_db.is_none() { 10u32 } else { 50u32 };
             let mut fetched = 0u32;
 
             'outer: loop {
                 let ids =
-                    riot::get_match_ids(&client, api_key, regional, &acct.puuid, start, batch)
+                    riot::get_match_ids(&client, regional, &acct.puuid, start, batch)
                         .await?;
                 if ids.is_empty() {
                     break;
@@ -69,9 +69,8 @@ pub async fn sync_player_and_get_overview(
                     if Some(&mid) == latest_in_db.as_ref() {
                         break 'outer;
                     }
-                    // For new users, skip timeline to speed up initial sync
                     let skip_timeline = latest_in_db.is_none();
-                    insert_match_with_options(&client, pool, api_key, regional, &acct.puuid, &mid, skip_timeline).await?;
+                    insert_match_with_options(&client, pool, regional, &acct.puuid, &mid, skip_timeline).await?;
                     fetched += 1;
                     if fetched >= max_to_fetch {
                         break 'outer;
@@ -84,21 +83,46 @@ pub async fn sync_player_and_get_overview(
     }
 
     let ddragon_version = riot::get_latest_ddragon_version(&client).await?;
+    eprintln!("[SYNC] DDragon version: {}", ddragon_version);
+    
     let recent_matches = db::get_recent_matches(pool, &acct.puuid, 10).await?;
+    eprintln!("[SYNC] Found {} recent matches in database for puuid: {}", recent_matches.len(), &acct.puuid);
+    
+    if recent_matches.is_empty() {
+        eprintln!("[SYNC] ⚠️  No matches found in database! This is unexpected after sync.");
+    } else {
+        eprintln!("[SYNC] Recent match IDs: {:?}", recent_matches.iter().map(|m| &m.matchId).collect::<Vec<_>>());
+    }
 
     let mut matches = Vec::with_capacity(recent_matches.len());
-    for row in recent_matches {
-        if let Ok(ms) = crate::match_summary::summarize_match_from_db(
+    let mut successful_summaries = 0;
+    let mut failed_summaries = 0;
+    
+    for (idx, row) in recent_matches.iter().enumerate() {
+        eprintln!("[SYNC] Processing match {}/{}: {}", idx + 1, recent_matches.len(), row.matchId);
+        
+        match crate::db_proxy::summarize_match_from_db(
             pool,
             &row.matchId,
             &acct.puuid,
             &ddragon_version,
-        )
-        .await
-        {
-            matches.push(ms);
+        ).await {
+            Ok(ms) => {
+                eprintln!("[SYNC] ✅ Successfully summarized match {}: {} vs {} ({})", 
+                         row.matchId, ms.champion_name, 
+                         if ms.win { "WIN" } else { "LOSS" }, ms.kda);
+                matches.push(ms);
+                successful_summaries += 1;
+            }
+            Err(e) => {
+                eprintln!("[SYNC] ❌ Failed to summarize match {}: {}", row.matchId, e);
+                failed_summaries += 1;
+            }
         }
     }
+    
+    eprintln!("[SYNC] Match summarization complete: {} successful, {} failed, {} total matches to return", 
+              successful_summaries, failed_summaries, matches.len());
 
     let profile_icon_url = format!(
         "https://ddragon.leagueoflegends.com/cdn/{}/img/profileicon/{}.png",
@@ -118,7 +142,7 @@ pub async fn sync_player_and_get_overview(
     };
 
     let (games, _wins, _losses, avg_kda, winrate, streak, top_champs_json) =
-        crate::db::compute_player_summary(pool, &acct.puuid).await?;
+        crate::db_proxy::compute_player_summary(pool, &acct.puuid).await?;
     let top_champs: Vec<TopChamp> =
         serde_json::from_value(top_champs_json).unwrap_or_else(|_| vec![]);
 
@@ -132,7 +156,7 @@ pub async fn sync_player_and_get_overview(
     let ranked_progress: Vec<RankStep> = if let (Some(ref t), Some(ref d), Some(lp_val)) =
         (profile.tier.as_ref(), profile.division.as_ref(), profile.lp)
     {
-        crate::db::compute_rank_progress_and_cache(pool, &acct.puuid, t, d, lp_val)
+        crate::db_proxy::compute_rank_progress_and_cache(pool, &acct.puuid, t, d, lp_val)
             .await
             .unwrap_or_default()
     } else {
@@ -151,7 +175,6 @@ pub async fn sync_player_and_get_overview(
 async fn insert_match_with_options(
     client: &Client,
     pool: &PgPool,
-    api_key: &str,
     regional: &str,
     entry_puuid: &str,
     match_id: &str,
@@ -162,13 +185,13 @@ async fn insert_match_with_options(
         return Ok(());
     }
 
-    let m: MatchDto = crate::riot::get_match_by_id(client, api_key, regional, match_id).await?;
+    let m: MatchDto = crate::riot::get_match_by_id(client, regional, match_id).await?;
     
     let timeline = if skip_timeline {
         println!("[SYNC] Skipping timeline for match {} to speed up initial sync", match_id);
         serde_json::Value::Null
     } else {
-        crate::riot::get_timeline_by_id(client, api_key, regional, match_id).await?
+        crate::riot::get_timeline_by_id(client, regional, match_id).await?
     };
 
     let participants_json = serde_json::to_value(&m.info.participants)?;
@@ -241,5 +264,5 @@ async fn insert_full_match(
     entry_puuid: &str,
     match_id: &str,
 ) -> Result<()> {
-    insert_match_with_options(client, pool, api_key, regional, entry_puuid, match_id, false).await
+    insert_match_with_options(client, pool, regional, entry_puuid, match_id, false).await
 }

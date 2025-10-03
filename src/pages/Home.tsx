@@ -17,14 +17,17 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    
+
     (async () => {
       try {
-        const res = await fetchOverview(
-          user.name,
-          user.region,
-          user.tag,
-        );
+        const res = await fetchOverview(user.name, user.region, user.tag);
+
+        if (res.matches.length === 0) {
+          console.warn("[Frontend] ⚠️  No matches received from backend!");
+        } else {
+          console.debug("[Frontend] ✅ First match:", res.matches[0]);
+        }
+
         setData(res);
         try {
           const activityRes = await fetchDailyActivity(res.profile.puuid);
@@ -33,6 +36,7 @@ const Home: React.FC = () => {
           console.error("Failed to fetch activity data:", activityError);
         }
       } catch (e: any) {
+        console.error("[Frontend] ❌ fetchOverview failed:", e);
         setError(e?.message ?? String(e));
       } finally {
         setLoading(false);
@@ -55,22 +59,22 @@ const Home: React.FC = () => {
     <>
       <div className="container grid">
         <div className="left-col">
-        <ProfileCard
-          name={profile.name}
-          tagline={profile.tagline}
-          region={profile.region}
-          level={profile.summoner_level}
-          profileIconUrl={profile.profile_icon_url}
-          tier={profile.tier}
-          division={profile.division}
-          lp={profile.lp ?? 0}
-          stats={stats}
-        />
+          <ProfileCard
+            name={profile.name}
+            tagline={profile.tagline}
+            region={profile.region}
+            level={profile.summoner_level}
+            profileIconUrl={profile.profile_icon_url}
+            tier={profile.tier}
+            division={profile.division}
+            lp={profile.lp ?? 0}
+            stats={stats}
+          />
 
-        <ActivityGraph entries={activityData} />
+          <ActivityGraph entries={activityData} />
 
-        <TopChamps champs={top_champs} />
-      </div>
+          <TopChamps champs={top_champs} />
+        </div>
 
         <div className="right-col">
           <MatchList matches={matches} />
@@ -79,5 +83,5 @@ const Home: React.FC = () => {
     </>
   );
 };
- 
+
 export default Home;

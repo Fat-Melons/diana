@@ -8,7 +8,7 @@ import {
   numK,
   killPartPercentage,
   roleIsSupport,
-  formatDurationMin
+  formatDurationMin,
 } from "../utils/format";
 import ItemIcon from "./ItemIcon";
 import ItemsGrid from "./ItemGrid";
@@ -101,7 +101,9 @@ const GPMCol: React.FC<{ match: MatchSummary }> = ({ match }) => (
 const KPCol: React.FC<{ match: MatchSummary }> = ({ match }) => (
   <StatCol
     label="KP"
-    value={<div className="big">{killPartPercentage(match.kill_participation)}</div>}
+    value={
+      <div className="big">{killPartPercentage(match.kill_participation)}</div>
+    }
     title="Kill Participation"
   />
 );
@@ -121,7 +123,7 @@ const ItemsCol: React.FC<{ match: MatchSummary }> = ({ match }) => (
     </div>
     <div className="col-main items-main">
       <ItemsGrid slots={match.items} ver={match.ddragon_version} />
-      <ItemIcon id={match.trinket} ver={match.ddragon_version}/>
+      <ItemIcon id={match.trinket} ver={match.ddragon_version} />
     </div>
   </div>
 );
@@ -131,8 +133,8 @@ const MatchRow: React.FC<{ match: MatchSummary }> = ({ match }) => {
   const resultClass = match.win
     ? "win"
     : match.game_duration_s <= 300
-    ? "remake"
-    : "loss";
+      ? "remake"
+      : "loss";
 
   const handleClick = () => {
     navigate(`/match/${match.match_id}`);

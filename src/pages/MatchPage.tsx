@@ -7,10 +7,7 @@ import MatchDetailTable from "../components/MatchDetailTable";
 import RefreshButton from "../components/RefreshButton";
 import BackButton from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
-import {
-  queueName,
-  timeAgo,
-} from "../utils/format";
+import { queueName, timeAgo } from "../utils/format";
 
 const formatDurationMin = (s: number) => `${Math.round(s / 60)}m`;
 
@@ -43,8 +40,11 @@ const MatchPage: React.FC = () => {
           user.tag,
         );
         setUserProfile(profileRes);
-        
-        const matchRes = await fetchMatchDetails(matchId, profileRes.profile.puuid);
+
+        const matchRes = await fetchMatchDetails(
+          matchId,
+          profileRes.profile.puuid,
+        );
         setData(matchRes);
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -71,20 +71,21 @@ const MatchPage: React.FC = () => {
       <RefreshButton />
       <div className="container">
         <div className="match-details">
-        <div className="match-header fancy-card">
-          <div className="card-head">
-            <h2 className="card-title">
-              Match Details - {queueName(data.queue_id)}
-            </h2>
-            <div className="badge">
-              {timeAgo(data.game_creation_ms)} • {formatDurationMin(data.game_duration_s)}
+          <div className="match-header fancy-card">
+            <div className="card-head">
+              <h2 className="card-title">
+                Match Details - {queueName(data.queue_id)}
+              </h2>
+              <div className="badge">
+                {timeAgo(data.game_creation_ms)} •{" "}
+                {formatDurationMin(data.game_duration_s)}
+              </div>
             </div>
           </div>
-        </div>
-        
-          <MatchDetailTable 
-            match={data} 
-            userPuuid={userProfile.profile.puuid} 
+
+          <MatchDetailTable
+            match={data}
+            userPuuid={userProfile.profile.puuid}
           />
         </div>
       </div>

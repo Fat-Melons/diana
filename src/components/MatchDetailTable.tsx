@@ -15,33 +15,41 @@ interface MatchDetailTableProps {
   userPuuid: string;
 }
 
-const MatchDetailTable: React.FC<MatchDetailTableProps> = ({ match, userPuuid }) => {
+const MatchDetailTable: React.FC<MatchDetailTableProps> = ({
+  match,
+  userPuuid,
+}) => {
   const teams: TeamGroup[] = [
     {
       team: "Blue",
-      participants: match.participants.filter(p => p.team === "Blue"),
-      won: match.participants.find(p => p.team === "Blue")?.win || false,
+      participants: match.participants.filter((p) => p.team === "Blue"),
+      won: match.participants.find((p) => p.team === "Blue")?.win || false,
     },
     {
-      team: "Red", 
-      participants: match.participants.filter(p => p.team === "Red"),
-      won: match.participants.find(p => p.team === "Red")?.win || false,
-    }
+      team: "Red",
+      participants: match.participants.filter((p) => p.team === "Red"),
+      won: match.participants.find((p) => p.team === "Red")?.win || false,
+    },
   ];
 
   return (
     <div className="match-detail-table">
       {teams.map((teamGroup) => (
-        <div key={teamGroup.team} className={`team-section ${teamGroup.team.toLowerCase()}-team`}>
+        <div
+          key={teamGroup.team}
+          className={`team-section ${teamGroup.team.toLowerCase()}-team`}
+        >
           <div className="team-header">
             <div className="team-info">
               <span className="team-name">{teamGroup.team} Team</span>
-              <span className={`team-result ${teamGroup.won ? 'victory' : 'defeat'}`}>
-                {teamGroup.won ? '✓ VICTORY' : '✗ DEFEAT'}
+              <span
+                className={`team-result ${teamGroup.won ? "victory" : "defeat"}`}
+              >
+                {teamGroup.won ? "✓ VICTORY" : "✗ DEFEAT"}
               </span>
             </div>
           </div>
-          
+
           <div className="team-table">
             <div className="table-header">
               <div className="col-header">Champion</div>
@@ -54,7 +62,7 @@ const MatchDetailTable: React.FC<MatchDetailTableProps> = ({ match, userPuuid })
               <div className="col-header">Damage</div>
               <div className="col-header">Items</div>
             </div>
-            
+
             <div className="table-body">
               {teamGroup.participants.map((participant) => (
                 <MatchTableRow

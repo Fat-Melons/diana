@@ -1,10 +1,10 @@
 import React from "react";
 import type { MatchParticipant } from "../types/riot";
-import { 
+import {
   formatKDA,
   numK,
   killPartPercentage,
-  getBaseSummonerName
+  getBaseSummonerName,
 } from "../utils/format";
 import ItemIcon from "./ItemIcon";
 import ItemsGrid from "./ItemGrid";
@@ -15,13 +15,13 @@ interface MatchTableRowProps {
   ddragonVersion: string;
 }
 
-const MatchTableRow: React.FC<MatchTableRowProps> = ({ 
-  participant, 
-  isHighlighted, 
-  ddragonVersion 
+const MatchTableRow: React.FC<MatchTableRowProps> = ({
+  participant,
+  isHighlighted,
+  ddragonVersion,
 }) => {
   return (
-    <div className={`table-row ${isHighlighted ? 'highlighted' : ''}`}>
+    <div className={`table-row ${isHighlighted ? "highlighted" : ""}`}>
       <div className="col champion-col">
         <img
           className="champion-icon"
@@ -39,13 +39,19 @@ const MatchTableRow: React.FC<MatchTableRowProps> = ({
 
       <div className="col kda-col">
         <div className="kda-main">
-          {formatKDA(participant.kills, participant.deaths, participant.assists)}
+          {formatKDA(
+            participant.kills,
+            participant.deaths,
+            participant.assists,
+          )}
         </div>
         <div className="kda-ratio">{participant.kda.toFixed(2)}</div>
       </div>
 
       <div className="col kp-col">
-        <span className="kp-value">{killPartPercentage(participant.kill_participation)}</span>
+        <span className="kp-value">
+          {killPartPercentage(participant.kill_participation)}
+        </span>
       </div>
 
       <div className="col cs-col">
@@ -53,7 +59,9 @@ const MatchTableRow: React.FC<MatchTableRowProps> = ({
       </div>
 
       <div className="col vision-col">
-        <span className="vision-value">{participant.vision_per_min.toFixed(1)}</span>
+        <span className="vision-value">
+          {participant.vision_per_min.toFixed(1)}
+        </span>
       </div>
 
       <div className="col gpm-col">

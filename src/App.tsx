@@ -13,25 +13,25 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <AppLayout>
                   <Home />
                 </AppLayout>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/match/:matchId" 
+          <Route
+            path="/match/:matchId"
             element={
               <ProtectedRoute>
                 <AppLayout>
                   <MatchPage />
                 </AppLayout>
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </Router>

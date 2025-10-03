@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { PlayerOverview, MatchDetails, DailyActivityEntry } from "../types/riot";
+import type {
+  PlayerOverview,
+  MatchDetails,
+  DailyActivityEntry,
+} from "../types/riot";
 
 export async function fetchOverview(
   name: string,

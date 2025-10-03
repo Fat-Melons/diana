@@ -18,7 +18,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = "diana_user";
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,13 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: User) => {
     try {
       await invoke("get_player_overview", {
-        query: { 
-          name: credentials.name, 
-          region: credentials.region, 
-          tag: credentials.tag 
+        query: {
+          name: credentials.name,
+          region: credentials.region,
+          tag: credentials.tag,
         },
       });
-      
+
       setUser(credentials);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials));
     } catch (error) {

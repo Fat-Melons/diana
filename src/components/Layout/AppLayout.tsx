@@ -30,8 +30,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <div className="app-layout" onClick={handleClickOutside}>
       <div className="burger-menu-container">
-        <button 
-          className="burger-button" 
+        <button
+          className="burger-button"
           onClick={(e) => {
             e.stopPropagation();
             toggleMenu();
@@ -58,7 +58,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {isMenuOpen && (
           <div className="burger-dropdown" onClick={(e) => e.stopPropagation()}>
             <div className="burger-user-info">
-              <div className="burger-user-name">{user?.name}#{user?.tag}</div>
+              <div className="burger-user-name">
+                {user?.name}#{user?.tag}
+              </div>
               <div className="burger-user-region">{user?.region}</div>
             </div>
             <div className="burger-divider"></div>
@@ -97,10 +99,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
         )}
       </div>
-      
-      <main className="app-content">
-        {children}
-      </main>
+
+      <main className="app-content">{children}</main>
     </div>
   );
 };

@@ -82,6 +82,11 @@ pub struct ParticipantDto {
     pub deaths: i32,
     pub assists: i32,
     pub win: bool,
+    
+    #[serde(default)]
+    pub riotIdGameName: Option<String>,
+    #[serde(default)]
+    pub riotIdTagline: Option<String>,
 
     #[serde(default)]
     pub totalMinionsKilled: Option<i32>,
@@ -131,7 +136,7 @@ pub struct ChallengesDto {
 }
 
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, serde::Deserialize, serde::Serialize)]
 pub struct DbSummoner {
     pub puuid: String,
     pub gameName: String,
@@ -149,7 +154,7 @@ pub struct DbSummoner {
     pub lastMissingDataNotification: DateTime<Utc>,
 }
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, serde::Deserialize, serde::Serialize)]
 pub struct DbMatchRow {
     pub mid: i64,
     pub matchId: String,
@@ -175,7 +180,7 @@ pub struct TopChamp {
     pub kda: f32,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RankStep {
     pub match_id: String,
     pub label_index: i32,
@@ -190,7 +195,7 @@ pub struct RankStep {
     pub exact: bool,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MatchParticipantDetail {
     pub puuid: String,
     pub summoner_name: String,
@@ -219,7 +224,7 @@ pub struct MatchParticipantDetail {
     pub team: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MatchDetails {
     pub match_id: String,
     pub queue_id: i32,
@@ -230,7 +235,7 @@ pub struct MatchDetails {
     pub ddragon_version: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DailyActivityEntry {
     pub date: String,
     pub games: i32,

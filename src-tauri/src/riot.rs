@@ -4,6 +4,28 @@ use reqwest::Client;
 use serde::de::DeserializeOwned;
 
 use crate::models::{AccountDto, LeagueEntryDto, MatchDto, SummonerDto};
+use crate::db_proxy::{proxy_base_url, proxy_health_url};
+
+pub async fn check_proxy_connectivity(client: &Client) -> Result<bool> {
+    let health_url = proxy_health_url();
+    
+    match client.get(&health_url).timeout(std::time::Duration::from_secs(5)).send().await {
+        Ok(response) => {
+            let status = response.status();
+            if status.is_success() {
+                println!("[ProxyAPI] Proxy server is available at {}", health_url);
+                Ok(true)
+            } else {
+                println!("[ProxyAPI] Proxy server returned status {} at {}", status, health_url);
+                Ok(false)
+            }
+        }
+        Err(e) => {
+            println!("[ProxyAPI] Failed to connect to proxy server at {}: {}", health_url, e);
+            Ok(false)
+        }
+    }
+}
 
 static DDRAGON_VERSION: OnceCell<String> = OnceCell::const_new();
 
@@ -24,19 +46,18 @@ pub fn map_region(region: &str) -> Option<(&'static str, &'static str)> {
     }
 }
 
-async fn get_with_riot_token<T: DeserializeOwned>(
+async fn get_from_proxy<T: DeserializeOwned>(
     client: &Client,
     url: &str,
-    key: &str,
 ) -> Result<T> {
-    println!("[RiotAPI] GET {url}");
-    let res = client.get(url).header("X-Riot-Token", key).send().await?;
+    println!("[ProxyAPI] GET {url}");
+    let res = client.get(url).send().await?;
     let status = res.status();
     let text = res.text().await.unwrap_or_default();
 
     if !status.is_success() {
-        println!("[RiotAPI] ERROR {} for {} → body: {}", status.as_u16(), url, text);
-        return Err(anyhow!("Riot API {}: {}", status, text));
+        println!("[ProxyAPI] ERROR {} for {} → body: {}", status.as_u16(), url, text);
+        return Err(anyhow!("Proxy API {}: {}", status, text));
     }
 
     let json = serde_json::from_str::<T>(&text)
@@ -46,57 +67,54 @@ async fn get_with_riot_token<T: DeserializeOwned>(
 
 pub async fn get_account_by_riot_id(
     client: &Client,
-    key: &str,
     regional: &str,
     name: &str,
     tag: &str,
 ) -> Result<AccountDto> {
     let url = format!(
-        "https://{}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}",
-        regional,
+        "{}/riot/account/v1/accounts/by-riot-id/{}/{}?region={}",
+        proxy_base_url(),
         urlencoding::encode(name),
-        urlencoding::encode(tag)
+        urlencoding::encode(tag),
+        regional
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_account_by_puuid(
     client: &Client,
-    key: &str,
     regional: &str,
     puuid: &str,
 ) -> Result<AccountDto> {
     let url = format!(
-        "https://{}.api.riotgames.com/riot/account/v1/accounts/by-puuid/{}",
-        regional, puuid
+        "{}/riot/account/v1/accounts/by-puuid/{}?region={}",
+        proxy_base_url(), puuid, regional
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_summoner_by_puuid(
     client: &Client,
-    key: &str,
     platform: &str,
     puuid: &str,
 ) -> Result<SummonerDto> {
     let url = format!(
-        "https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}",
-        platform, puuid
+        "{}/lol/summoner/v4/summoners/by-puuid/{}?platform={}",
+        proxy_base_url(), puuid, platform
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_rank_solo(
     client: &Client,
-    key: &str,
     platform: &str,
     puuid: &str,
 ) -> Result<(Option<String>, Option<String>, Option<i32>)> {
     let url = format!(
-        "https://{}.api.riotgames.com/lol/league/v4/entries/by-puuid/{}",
-        platform, puuid
+        "{}/lol/league/v4/entries/by-puuid/{}?platform={}",
+        proxy_base_url(), puuid, platform
     );
-    let entries: Vec<LeagueEntryDto> = get_with_riot_token(client, &url, key).await?;
+    let entries: Vec<LeagueEntryDto> = get_from_proxy(client, &url).await?;
     if let Some(solo) = entries.into_iter().find(|e| e.queueType == "RANKED_SOLO_5x5") {
         Ok((Some(solo.tier), Some(solo.rank), Some(solo.leaguePoints)))
     } else {
@@ -106,50 +124,47 @@ pub async fn get_rank_solo(
 
 pub async fn get_match_ids(
     client: &Client,
-    key: &str,
     regional: &str,
     puuid: &str,
     start: u32,
     count: u32,
 ) -> Result<Vec<String>> {
     let url = format!(
-        "https://{}.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?start={}&count={}",
-        regional, puuid, start, count
+        "{}/lol/match/v5/matches/by-puuid/{}/ids?region={}&start={}&count={}",
+        proxy_base_url(), puuid, regional, start, count
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_match_by_id(
     client: &Client,
-    key: &str,
     regional: &str,
     match_id: &str,
 ) -> Result<MatchDto> {
     let url = format!(
-        "https://{}.api.riotgames.com/lol/match/v5/matches/{}",
-        regional, match_id
+        "{}/lol/match/v5/matches/{}?region={}",
+        proxy_base_url(), match_id, regional
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_timeline_by_id(
     client: &Client,
-    key: &str,
     regional: &str,
     match_id: &str,
 ) -> Result<serde_json::Value> {
     let url = format!(
-        "https://{}.api.riotgames.com/lol/match/v5/matches/{}/timeline",
-        regional, match_id
+        "{}/lol/match/v5/matches/{}/timeline?region={}",
+        proxy_base_url(), match_id, regional
     );
-    get_with_riot_token(client, &url, key).await
+    get_from_proxy(client, &url).await
 }
 
 pub async fn get_latest_ddragon_version(client: &reqwest::Client) -> Result<String> {
     let v = DDRAGON_VERSION
         .get_or_try_init(|| async {
-            let url = "https://ddragon.leagueoflegends.com/api/versions.json";
-            let versions: Vec<String> = get_with_riot_token(client, url, "").await?;
+            let url = format!("{}/ddragon/versions", proxy_base_url());
+            let versions: Vec<String> = get_from_proxy(client, &url).await?;
             versions
                 .into_iter()
                 .next()
@@ -162,33 +177,36 @@ pub async fn get_latest_ddragon_version(client: &reqwest::Client) -> Result<Stri
 
 pub async fn get_summoner_names_by_puuids(
     client: &Client,
-    key: &str,
     regional: &str,
     puuids: &[String],
 ) -> Result<std::collections::HashMap<String, String>> {
-    use tokio::time::{sleep, Duration};
+    let url = format!(
+        "{}/riot/account/v1/accounts/batch?region={}",
+        proxy_base_url(), regional
+    );
     
-    let mut summoner_names = std::collections::HashMap::new();
+    let body = serde_json::json!({
+        "puuids": puuids
+    });
     
-    for puuid in puuids {
-        match get_account_by_puuid(client, key, regional, puuid).await {
-            Ok(account) => {
-                let display_name = if account.tagLine.is_empty() {
-                    account.gameName.clone()
-                } else {
-                    format!("{}#{}", account.gameName, account.tagLine)
-                };
-                summoner_names.insert(puuid.clone(), display_name);
-            }
-            Err(e) => {
-                println!("[RiotAPI] Failed to fetch account for PUUID {}: {}", puuid, e);
-                let short_id = if puuid.len() >= 8 { &puuid[0..8] } else { puuid };
-                summoner_names.insert(puuid.clone(), format!("Player {}", short_id));
-            }
-        }
-        
-        sleep(Duration::from_millis(100)).await;
+    println!("[ProxyAPI] POST {url}");
+    let res = client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await?;
+    
+    let status = res.status();
+    let text = res.text().await.unwrap_or_default();
+
+    if !status.is_success() {
+        println!("[ProxyAPI] ERROR {} for {} → body: {}", status.as_u16(), url, text);
+        return Err(anyhow!("Proxy API {}: {}", status, text));
     }
+
+    let summoner_names: std::collections::HashMap<String, String> = serde_json::from_str(&text)
+        .map_err(|e| anyhow!("Failed to decode JSON: {} → {}", e, text))?;
     
     Ok(summoner_names)
 }
